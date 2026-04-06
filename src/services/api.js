@@ -8,6 +8,56 @@ const api = axios.create({
   timeout: 30000,
 })
 
+// Attach token from localStorage on every request
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('policyai_token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+// Handle 401 responses globally — redirect to login
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('policyai_token')
+      // Only redirect if not already on auth pages
+      if (!window.location.pathname.startsWith('/login') && 
+          !window.location.pathname.startsWith('/signup') &&
+          window.location.pathname !== '/') {
+        window.location.href = '/login'
+      }
+    }
+    return Promise.reject(error)
+  }
+)
+
+// --- Auth API ---
+
+export async function authRegister(email, password, name) {
+  const res = await api.post('/auth/register', { email, password, name })
+  return res.data
+}
+
+export async function authLogin(email, password) {
+  const res = await api.post('/auth/login', { email, password })
+  return res.data
+}
+
+export async function authVerify() {
+  const res = await api.post('/auth/verify')
+  return res.data
+}
+
+export async function authMe() {
+  const res = await api.get('/auth/me')
+  return res.data
+}
+
+// --- Policy API ---
+
 export async function predictPolicy(inputs) {
   const res = await api.post('/predict', inputs)
   return res.data

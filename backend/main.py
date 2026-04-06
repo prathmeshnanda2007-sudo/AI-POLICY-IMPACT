@@ -44,7 +44,9 @@ app.add_middleware(
 
 # Import and register routes
 from routes.api import router
+from routes.auth import router as auth_router
 app.include_router(router)
+app.include_router(auth_router)
 
 
 @app.get("/")

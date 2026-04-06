@@ -1,9 +1,11 @@
 """API Routes for Policy Simulator."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict
 import logging
+
+from services.auth import get_current_user
 
 from models.ml_model import (
     predict_policy, load_model, train_and_select_best,
@@ -58,7 +60,7 @@ class RecommendRequest(BaseModel):
 # --- Prediction Endpoints ---
 
 @router.post("/predict")
-async def predict(inputs: PolicyInput):
+async def predict(inputs: PolicyInput, current_user: dict = Depends(get_current_user)):
     """Run policy simulation and return predicted outcomes."""
     try:
         input_dict = inputs.model_dump()
@@ -80,7 +82,7 @@ async def predict(inputs: PolicyInput):
 
 
 @router.post("/compare")
-async def compare(request: CompareRequest):
+async def compare(request: CompareRequest, current_user: dict = Depends(get_current_user)):
     """Compare multiple policy scenarios."""
     try:
         results = []
@@ -94,7 +96,7 @@ async def compare(request: CompareRequest):
 
 
 @router.post("/train")
-async def train():
+async def train(current_user: dict = Depends(get_current_user)):
     """Retrain the ML model with fresh synthetic data."""
     global model, scaler, metadata
     try:
@@ -133,13 +135,13 @@ async def feature_importance():
 # --- Scenarios CRUD ---
 
 @router.get("/scenarios")
-async def list_scenarios():
+async def list_scenarios(current_user: dict = Depends(get_current_user)):
     """List all saved scenarios."""
     return get_all_scenarios()
 
 
 @router.post("/scenarios")
-async def create_scenario(scenario: ScenarioCreate):
+async def create_scenario(scenario: ScenarioCreate, current_user: dict = Depends(get_current_user)):
     """Save a new scenario."""
     try:
         saved = save_scenario(scenario.name, scenario.inputs, scenario.results)
@@ -150,7 +152,7 @@ async def create_scenario(scenario: ScenarioCreate):
 
 
 @router.delete("/scenarios/{scenario_id}")
-async def remove_scenario(scenario_id: int):
+async def remove_scenario(scenario_id: int, current_user: dict = Depends(get_current_user)):
     """Delete a saved scenario."""
     success = db_delete_scenario(scenario_id)
     if not success:
@@ -161,7 +163,7 @@ async def remove_scenario(scenario_id: int):
 # --- History ---
 
 @router.get("/history")
-async def history():
+async def history(current_user: dict = Depends(get_current_user)):
     """Get simulation history."""
     return db_get_history(50)
 
@@ -169,7 +171,7 @@ async def history():
 # --- Advanced ML ---
 
 @router.post("/sensitivity")
-async def run_sensitivity(request: SensitivityRequest):
+async def run_sensitivity(request: SensitivityRequest, current_user: dict = Depends(get_current_user)):
     """Run sensitivity analysis on policy inputs."""
     try:
         base = request.inputs or {
@@ -184,7 +186,7 @@ async def run_sensitivity(request: SensitivityRequest):
 
 
 @router.post("/recommend")
-async def recommend(request: RecommendRequest):
+async def recommend(request: RecommendRequest, current_user: dict = Depends(get_current_user)):
     """Get AI policy recommendation for desired outcomes."""
     try:
         targets = {k: v for k, v in request.model_dump().items() if v is not None}

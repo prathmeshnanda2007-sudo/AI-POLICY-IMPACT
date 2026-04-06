@@ -2,6 +2,7 @@
 
 import sqlite3
 import json
+import re
 import os
 from datetime import datetime
 
@@ -22,12 +23,25 @@ def init_db():
     cursor = conn.cursor()
 
     cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            name TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_login TIMESTAMP
+        )
+    ''')
+
+    cursor.execute('''
         CREATE TABLE IF NOT EXISTS scenarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             inputs TEXT NOT NULL,
             results TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            user_id INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
         )
     ''')
 
@@ -38,7 +52,9 @@ def init_db():
             results TEXT NOT NULL,
             model_type TEXT,
             confidence REAL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            user_id INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
         )
     ''')
 
@@ -144,6 +160,75 @@ def log_training(model_type: str, rmse: float, r2: float, samples: int):
         'INSERT INTO model_training_log (model_type, rmse, r2_score, training_samples) VALUES (?, ?, ?, ?)',
         (model_type, rmse, r2, samples)
     )
+    conn.commit()
+    conn.close()
+
+
+# --- User Management ---
+
+def create_user(email: str, password_hash: str, name: str) -> dict:
+    """Create a new user. Returns user dict or raises on duplicate."""
+    email = email.lower().strip()
+    if not re.match(r'^[^@]+@[^@]+\.[^@]+$', email):
+        raise ValueError('Invalid email format')
+    if len(name.strip()) < 2:
+        raise ValueError('Name must be at least 2 characters')
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            'INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)',
+            (email, password_hash, name.strip())
+        )
+        conn.commit()
+        user_id = cursor.lastrowid
+        return {'id': user_id, 'email': email, 'name': name.strip()}
+    except sqlite3.IntegrityError:
+        raise ValueError('Email already registered')
+    finally:
+        conn.close()
+
+
+def get_user_by_email(email: str) -> dict | None:
+    """Find a user by email. Returns dict with password_hash or None."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM users WHERE email = ?', (email.lower().strip(),))
+    row = cursor.fetchone()
+    conn.close()
+    if row is None:
+        return None
+    return {
+        'id': row['id'],
+        'email': row['email'],
+        'password_hash': row['password_hash'],
+        'name': row['name'],
+        'created_at': row['created_at'],
+    }
+
+
+def get_user_by_id(user_id: int) -> dict | None:
+    """Find a user by ID."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, email, name, created_at FROM users WHERE id = ?', (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if row is None:
+        return None
+    return {
+        'id': row['id'],
+        'email': row['email'],
+        'name': row['name'],
+        'created_at': row['created_at'],
+    }
+
+
+def update_last_login(user_id: int):
+    """Update user's last login timestamp."""
+    conn = get_connection()
+    conn.execute('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', (user_id,))
     conn.commit()
     conn.close()
 

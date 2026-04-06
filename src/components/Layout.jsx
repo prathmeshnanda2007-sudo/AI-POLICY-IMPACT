@@ -2,8 +2,9 @@ import React from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { 
   LayoutDashboard, Sliders, BarChart3, GitCompare, 
-  Activity, LogOut, Zap, Brain, ChevronRight
+  Activity, LogOut, Zap, Brain, ChevronRight, User
 } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -15,6 +16,12 @@ const navItems = [
 export default function Layout({ children, onLogout }) {
   const location = useLocation()
   const [collapsed, setCollapsed] = React.useState(false)
+  const { user } = useAuth()
+
+  // Get user initials for avatar
+  const initials = user?.name
+    ? user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+    : '?'
 
   return (
     <div className="flex h-screen overflow-hidden bg-dark-500">
@@ -74,8 +81,24 @@ export default function Layout({ children, onLogout }) {
           </div>
         )}
 
-        {/* Logout */}
-        <div className="p-3 border-t border-white/5">
+        {/* User Profile + Logout */}
+        <div className="p-3 border-t border-white/5 space-y-2">
+          {/* User Info */}
+          {user && (
+            <div className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-dark-300/50 ${collapsed ? 'justify-center' : ''}`}>
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center flex-shrink-0">
+                <span className="text-xs font-bold text-white">{initials}</span>
+              </div>
+              {!collapsed && (
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-white truncate">{user.name}</p>
+                  <p className="text-[11px] text-gray-500 truncate">{user.email}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Logout */}
           <button
             onClick={onLogout}
             className="nav-link w-full text-red-400 hover:text-red-300 hover:bg-red-500/10"
@@ -109,6 +132,12 @@ export default function Layout({ children, onLogout }) {
                 Random Forest v2.4
               </span>
             </div>
+            {user && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-dark-300 border border-white/5">
+                <User className="w-3.5 h-3.5 text-gray-400" />
+                <span className="text-xs font-medium text-gray-300">{user.name}</span>
+              </div>
+            )}
           </div>
         </header>
 

@@ -1,15 +1,8 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React from 'react'
+import { Link } from 'react-router-dom'
 import { Brain, ArrowRight, BarChart3, Cpu, Shield, Globe, Zap, ChevronRight } from 'lucide-react'
 
-export default function Landing({ onLogin }) {
-  const [showLogin, setShowLogin] = useState(false)
-  const navigate = useNavigate()
-
-  const handleStart = () => {
-    onLogin()
-  }
-
+export default function Landing() {
   return (
     <div className="min-h-screen bg-dark-500 overflow-hidden">
       {/* Animated background */}
@@ -29,9 +22,14 @@ export default function Landing({ onLogin }) {
           <a href="#features" className="hover:text-white transition-colors">Features</a>
           <a href="#stats" className="hover:text-white transition-colors">Benefits</a>
         </div>
-        <button onClick={handleStart} className="btn-primary text-sm px-5 py-2.5">
-          Get Started
-        </button>
+        <div className="flex items-center gap-3">
+          <Link to="/login" className="text-sm text-gray-400 hover:text-white transition-colors px-4 py-2">
+            Sign In
+          </Link>
+          <Link to="/signup" className="btn-primary text-sm px-5 py-2.5">
+            Get Started
+          </Link>
+        </div>
       </nav>
 
       {/* Hero Section */}
@@ -54,12 +52,12 @@ export default function Landing({ onLogin }) {
         </p>
 
         <div className="flex items-center justify-center gap-4 mb-16">
-          <button onClick={handleStart} className="btn-primary text-base px-8 py-4 flex items-center gap-2">
+          <Link to="/signup" className="btn-primary text-base px-8 py-4 flex items-center gap-2">
             Start Simulating Free <ArrowRight className="w-4 h-4" />
-          </button>
-          <button onClick={handleStart} className="btn-secondary text-base px-8 py-4 flex items-center gap-2">
-            View Demo <ChevronRight className="w-4 h-4" />
-          </button>
+          </Link>
+          <Link to="/login" className="btn-secondary text-base px-8 py-4 flex items-center gap-2">
+            Sign In <ChevronRight className="w-4 h-4" />
+          </Link>
         </div>
 
         {/* Preview Card */}
@@ -178,9 +176,9 @@ export default function Landing({ onLogin }) {
         <p className="text-gray-400 mb-8">
           Join thousands of policymakers and economists using AI to design better public policies.
         </p>
-        <button onClick={handleStart} className="btn-primary text-base px-10 py-4 flex items-center gap-2 mx-auto">
-          Start Your First Simulation <ArrowRight className="w-4 h-4" />
-        </button>
+        <Link to="/signup" className="btn-primary text-base px-10 py-4 inline-flex items-center gap-2 mx-auto">
+          Create Free Account <ArrowRight className="w-4 h-4" />
+        </Link>
         <p className="text-xs text-gray-500 mt-4">Free to use. No credit card required.</p>
       </section>
 
