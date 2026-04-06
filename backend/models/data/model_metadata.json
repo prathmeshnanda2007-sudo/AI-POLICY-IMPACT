@@ -1,0 +1,43 @@
+{
+  "model_type": "LinearRegression",
+  "rmse": 1.1493612994109592,
+  "r2_score": 0.9509944553531836,
+  "training_samples": 5000,
+  "feature_names": [
+    "tax_rate",
+    "fuel_price",
+    "subsidy",
+    "public_spending",
+    "interest_rate",
+    "environmental_regulation"
+  ],
+  "output_names": [
+    "gdp_growth",
+    "inflation",
+    "employment_rate",
+    "environment_score",
+    "public_satisfaction"
+  ],
+  "feature_importance": {
+    "tax_rate": 0.40971388532010167,
+    "fuel_price": 0.10138683248947493,
+    "subsidy": 0.4622865853337338,
+    "public_spending": 0.19283444110282527,
+    "interest_rate": 0.19483733464872516,
+    "environmental_regulation": 0.4863639888795138
+  },
+  "all_results": {
+    "RandomForest": {
+      "rmse": 1.380733496993405,
+      "r2": 0.9294543407970985
+    },
+    "LinearRegression": {
+      "rmse": 1.1493612994109592,
+      "r2": 0.9509944553531836
+    },
+    "GradientBoosting": {
+      "rmse": 1.364711881877314,
+      "r2": 0.9322384979034684
+    }
+  }
+}
