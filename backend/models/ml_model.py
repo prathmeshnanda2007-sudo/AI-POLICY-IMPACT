@@ -209,14 +209,14 @@ def predict_policy(input_data: dict, model=None, scaler=None):
     if model is None or scaler is None:
         model, scaler, _ = load_model()
 
-    features = np.array([[input_data.get(f, 0) for f in FEATURE_NAMES]])
+    features = pd.DataFrame([[input_data.get(f, 0) for f in FEATURE_NAMES]], columns=FEATURE_NAMES)
     features_scaled = scaler.transform(features)
     predictions = model.predict(features_scaled)[0]
 
     # Calculate confidence based on how close inputs are to training distribution center
     center = scaler.mean_
     scale = scaler.scale_
-    normalized_dist = np.mean(np.abs((features[0] - center) / scale))
+    normalized_dist = np.mean(np.abs((features.values[0] - center) / scale))
     confidence = max(0.6, min(0.99, 1.0 - normalized_dist * 0.1))
 
     result = {}
