@@ -67,7 +67,7 @@ async def health():
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "dist"
 
 if FRONTEND_DIR.is_dir():
-    logger.info(f"✅ Serving frontend from: {FRONTEND_DIR}")
+    logger.info(f"[OK] Serving frontend from: {FRONTEND_DIR}")
 
     # Mount static assets (JS, CSS, images) under /assets
     assets_dir = FRONTEND_DIR / "assets"
@@ -103,7 +103,7 @@ if FRONTEND_DIR.is_dir():
 
         return JSONResponse({"error": "not found"}, status_code=404)
 else:
-    logger.warning(f"⚠️  Frontend dist/ not found at {FRONTEND_DIR}")
+    logger.warning(f"[WARN] Frontend dist/ not found at {FRONTEND_DIR}")
     logger.warning("   Run 'npm run build' in the project root to build the frontend.")
 
     # When no frontend build exists, serve API root info

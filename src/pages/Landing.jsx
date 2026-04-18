@@ -1,13 +1,16 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { Brain, ArrowRight, BarChart3, Cpu, Shield, Globe, Zap, ChevronRight } from 'lucide-react'
+import ShaderAnimation from '@/components/ui/spiral-shader'
 
 export default function Landing() {
   return (
     <div className="min-h-screen bg-dark-500 overflow-hidden">
-      {/* Animated background */}
-      <div className="fixed inset-0 bg-grid opacity-30" />
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-primary-500/5 rounded-full blur-[120px]" />
+      {/* Animated Spiral Shader Background */}
+      <div className="fixed inset-0 opacity-40">
+        <ShaderAnimation />
+      </div>
+      <div className="fixed inset-0 bg-gradient-to-b from-dark-500/30 via-transparent to-dark-500/90" />
 
       {/* Navigation */}
       <nav className="relative z-10 flex items-center justify-between px-8 py-5 max-w-7xl mx-auto">

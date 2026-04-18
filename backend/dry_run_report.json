@@ -1,0 +1,315 @@
+{
+  "timestamp": "2026-04-16 22:35:54",
+  "total": 61,
+  "passed": 60,
+  "failed": 0,
+  "warnings": 1,
+  "pass_rate": "98.4%",
+  "results": [
+    {
+      "name": "ML module imports",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Synthetic data generation (5000 samples)",
+      "status": "PASS",
+      "detail": "X=(5000, 6), y=(5000, 5)"
+    },
+    {
+      "name": "Feature range validation",
+      "status": "PASS",
+      "detail": "All 6 features within expected bounds"
+    },
+    {
+      "name": "Model training (3 algorithms compared)",
+      "status": "PASS",
+      "detail": "Best=LinearRegression, R\u00b2=0.9510, RMSE=1.1494"
+    },
+    {
+      "name": "Model persistence (model.pkl, scaler.pkl, metadata.json)",
+      "status": "PASS",
+      "detail": "model.pkl=1888 bytes"
+    },
+    {
+      "name": "Model loading from disk",
+      "status": "PASS",
+      "detail": "Type=LinearRegression"
+    },
+    {
+      "name": "Training scenario: Default Baseline",
+      "status": "PASS",
+      "detail": "Conf=0.95 | gdp_growth=2.28, inflation=4.03, employment_rate=93.66, environment_score=51.18, public_satisfaction=61.80"
+    },
+    {
+      "name": "Training scenario: High Tax + Strong Regulation",
+      "status": "PASS",
+      "detail": "Conf=0.90 | gdp_growth=-0.51, inflation=4.51, employment_rate=90.94, environment_score=65.74, public_satisfaction=53.46"
+    },
+    {
+      "name": "Training scenario: Low Tax Pro-Business",
+      "status": "PASS",
+      "detail": "Conf=0.87 | gdp_growth=5.01, inflation=4.27, employment_rate=97.08, environment_score=39.00, public_satisfaction=68.88"
+    },
+    {
+      "name": "Training scenario: Balanced Growth",
+      "status": "PASS",
+      "detail": "Conf=0.94 | gdp_growth=3.25, inflation=4.50, employment_rate=95.92, environment_score=56.84, public_satisfaction=68.79"
+    },
+    {
+      "name": "Test scenario: Minimum All Inputs",
+      "status": "PASS",
+      "detail": "Conf=0.83 | gdp_growth=3.22, inflation=2.71, employment_rate=92.31, environment_score=31.12, public_satisfaction=58.69"
+    },
+    {
+      "name": "Test scenario: Maximum All Inputs",
+      "status": "PASS",
+      "detail": "Conf=0.83 | gdp_growth=0.83, inflation=6.08, employment_rate=95.02, environment_score=69.07, public_satisfaction=60.51"
+    },
+    {
+      "name": "Test scenario: Zero Subsidy Austerity",
+      "status": "PASS",
+      "detail": "Conf=0.87 | gdp_growth=-0.79, inflation=2.63, employment_rate=86.79, environment_score=29.65, public_satisfaction=38.63"
+    },
+    {
+      "name": "Test scenario: Maximum Stimulus",
+      "status": "PASS",
+      "detail": "Conf=0.84 | gdp_growth=6.40, inflation=5.85, employment_rate=100.75, environment_score=45.91, public_satisfaction=78.68"
+    },
+    {
+      "name": "Test scenario: Eco-Extreme Policy",
+      "status": "PASS",
+      "detail": "Conf=0.91 | gdp_growth=2.25, inflation=5.74, employment_rate=95.70, environment_score=68.23, public_satisfaction=64.47"
+    },
+    {
+      "name": "Test scenario: Boundary Mix",
+      "status": "PASS",
+      "detail": "Conf=0.79 | gdp_growth=4.41, inflation=4.53, employment_rate=100.49, environment_score=74.72, public_satisfaction=89.24"
+    },
+    {
+      "name": "Feature importance retrieval",
+      "status": "PASS",
+      "detail": "6 features: ['environmental_regulation', 'subsidy', 'tax_rate']..."
+    },
+    {
+      "name": "Sensitivity analysis (gdp_growth)",
+      "status": "PASS",
+      "detail": "Top impact: tax_rate \u2192 -0.1494"
+    },
+    {
+      "name": "Sensitivity analysis (inflation)",
+      "status": "PASS",
+      "detail": "Top: public_spending \u2192 0.1210"
+    },
+    {
+      "name": "Policy recommendation engine",
+      "status": "PASS",
+      "detail": "Opt score=62.91 | tax=28.1%, subsidy=44.2%"
+    },
+    {
+      "name": "Database module imports",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Database file exists",
+      "status": "PASS",
+      "detail": "Size=57344 bytes at C:\\Users\\priya\\AI-POLICY-IMPACT\\backend\\services\\..\\data\\policy_simulator.db"
+    },
+    {
+      "name": "Database tables",
+      "status": "PASS",
+      "detail": "Tables: ['scenarios', 'sqlite_sequence', 'simulation_history', 'model_training_log', 'users']"
+    },
+    {
+      "name": "User creation",
+      "status": "PASS",
+      "detail": "ID=14, email=dryrun_1776359153@test.com"
+    },
+    {
+      "name": "Duplicate email rejection",
+      "status": "PASS",
+      "detail": "Correctly rejected: Email already registered"
+    },
+    {
+      "name": "User lookup by email",
+      "status": "PASS",
+      "detail": "Found: DryRun User"
+    },
+    {
+      "name": "User lookup by ID",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Update last login",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Save scenario",
+      "status": "PASS",
+      "detail": "ID=24"
+    },
+    {
+      "name": "Get all scenarios",
+      "status": "PASS",
+      "detail": "13 scenarios found"
+    },
+    {
+      "name": "Delete scenario",
+      "status": "PASS",
+      "detail": "Deleted ID=24"
+    },
+    {
+      "name": "Save simulation history",
+      "status": "PASS",
+      "detail": "Sim ID=46"
+    },
+    {
+      "name": "Get simulation history",
+      "status": "PASS",
+      "detail": "10 entries"
+    },
+    {
+      "name": "Log training event",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Auth service imports",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Password hashing (PBKDF2-SHA256)",
+      "status": "PASS",
+      "detail": "Hash format: salt(32):key(64)"
+    },
+    {
+      "name": "Password verification",
+      "status": "PASS",
+      "detail": "Correct=True, Wrong=False, Empty=False"
+    },
+    {
+      "name": "JWT token creation",
+      "status": "PASS",
+      "detail": "Token length: 199 chars"
+    },
+    {
+      "name": "JWT token decoding",
+      "status": "PASS",
+      "detail": "sub=1, exp=1776618354"
+    },
+    {
+      "name": "Invalid/tampered token rejection",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "JWT configuration",
+      "status": "PASS",
+      "detail": "Expiry=72h, Secret length=49"
+    },
+    {
+      "name": "FastAPI app import",
+      "status": "PASS",
+      "detail": "Title='AI Policy Impact Simulator', Version='2.5.0'"
+    },
+    {
+      "name": "Route registration",
+      "status": "PASS",
+      "detail": "All 15 expected routes registered"
+    },
+    {
+      "name": "CORS middleware",
+      "status": "PASS",
+      "detail": "CORSMiddleware configured"
+    },
+    {
+      "name": "Pydantic request schemas",
+      "status": "PASS",
+      "detail": "PolicyInput defaults: tax=25, fuel=3.5"
+    },
+    {
+      "name": "Auth route schemas",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Frontend files audit",
+      "status": "PASS",
+      "detail": "All 24 files present"
+    },
+    {
+      "name": "API URL configuration (.env)",
+      "status": "PASS",
+      "detail": "VITE_API_URL points to backend"
+    },
+    {
+      "name": "API service functions",
+      "status": "PASS",
+      "detail": "All 15 API functions defined"
+    },
+    {
+      "name": "Auth interceptors (request + 401 handler)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "React Router configuration",
+      "status": "PASS",
+      "detail": "6 routes + ProtectedRoute + PublicRoute guards"
+    },
+    {
+      "name": "Vite dev proxy (/api \u2192 backend)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Overall test set accuracy",
+      "status": "PASS",
+      "detail": "RMSE=1.1494, R\u00b2=0.9510"
+    },
+    {
+      "name": "  Per-output R\u00b2 \u2014 gdp_growth",
+      "status": "PASS",
+      "detail": "R\u00b2=0.9454"
+    },
+    {
+      "name": "  Per-output R\u00b2 \u2014 inflation",
+      "status": "PASS",
+      "detail": "R\u00b2=0.9213"
+    },
+    {
+      "name": "  Per-output R\u00b2 \u2014 employment_rate",
+      "status": "PASS",
+      "detail": "R\u00b2=0.9548"
+    },
+    {
+      "name": "  Per-output R\u00b2 \u2014 environment_score",
+      "status": "PASS",
+      "detail": "R\u00b2=0.9711"
+    },
+    {
+      "name": "  Per-output R\u00b2 \u2014 public_satisfaction",
+      "status": "PASS",
+      "detail": "R\u00b2=0.9624"
+    },
+    {
+      "name": "Production build (dist/)",
+      "status": "PASS",
+      "detail": "dist/index.html exists"
+    },
+    {
+      "name": "Frontend dependencies (node_modules)",
+      "status": "PASS",
+      "detail": "node_modules exists"
+    },
+    {
+      "name": "Backend requirements.txt",
+      "status": "WARN",
+      "detail": "Missing: ['uvicorn']"
+    }
+  ]
+}
