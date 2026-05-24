@@ -1,7 +1,29 @@
 import React, { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import { TrendingUp, TrendingDown, Activity, AlertTriangle, BarChart3, Clock } from 'lucide-react'
-import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Brush } from 'recharts'
 import { getHistory, getModelInfo } from '../services/api'
+import { Skeleton } from '../components/ui/skeleton'
+import {
+  useReactTable,
+  getCoreRowModel,
+  flexRender,
+  getSortedRowModel,
+  getPaginationRowModel,
+} from '@tanstack/react-table'
+
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+}
+
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } }
+}
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
@@ -22,6 +44,8 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function Dashboard() {
   const [history, setHistory] = useState([])
   const [modelInfo, setModelInfo] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [sorting, setSorting] = useState([])
   const [stats, setStats] = useState({
     totalSimulations: 0,
     avgInflation: 0,
@@ -51,8 +75,30 @@ export default function Dashboard() {
       }
     } catch (err) {
       console.error('Failed to load dashboard data:', err)
+    } finally {
+      setLoading(false)
     }
   }
+
+  const tableColumns = React.useMemo(() => [
+    { accessorKey: 'id', header: 'ID' },
+    { accessorKey: 'timestamp', header: 'Date', cell: info => new Date(info.getValue()).toLocaleDateString() },
+    { accessorFn: row => row.results?.gdp_growth, id: 'gdp', header: 'GDP Growth', cell: info => `${info.getValue().toFixed(2)}%` },
+    { accessorFn: row => row.results?.inflation, id: 'inflation', header: 'Inflation', cell: info => `${info.getValue().toFixed(2)}%` },
+    { accessorFn: row => row.results?.employment_rate, id: 'employment', header: 'Employment', cell: info => `${info.getValue().toFixed(1)}%` },
+    { accessorFn: row => row.results?.environment_score, id: 'environment', header: 'Env Score', cell: info => info.getValue().toFixed(1) },
+  ], [])
+
+  const table = useReactTable({
+    data: history,
+    columns: tableColumns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: { pagination: { pageSize: 5 } }
+  })
 
   const chartData = React.useMemo(() => {
     if (history.length === 0) {
@@ -110,35 +156,40 @@ export default function Dashboard() {
   ]
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      <div>
+    <motion.div variants={container} initial="hidden" animate="show" className="space-y-8">
+      <motion.div variants={item}>
         <h1 className="text-2xl font-display font-bold text-white mb-1">Dashboard</h1>
         <p className="text-sm text-gray-400">Overview of your policy simulations and model performance</p>
-      </div>
+      </motion.div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statCards.map((card) => (
-          <div key={card.label} className="glass-card-hover p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div className="p-2.5 rounded-xl" style={{ backgroundColor: `${card.color}15` }}>
-                <card.icon className="w-5 h-5" style={{ color: card.color }} />
+      <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {loading ? (
+          Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-32 rounded-2xl bg-white/5" />)
+        ) : (
+          statCards.map((card) => (
+            <div key={card.label} className="glass-card-hover p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="p-2.5 rounded-xl" style={{ backgroundColor: `${card.color}15` }}>
+                  <card.icon className="w-5 h-5" style={{ color: card.color }} />
+                </div>
+                <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                  card.positive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+                }`}>
+                  {card.change}
+                </span>
               </div>
-              <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                card.positive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
-              }`}>
-                {card.change}
-              </span>
+              <p className="text-3xl font-display font-bold text-white mb-1">{card.value}</p>
+              <p className="text-xs text-gray-400">{card.label}</p>
             </div>
-            <p className="text-3xl font-display font-bold text-white mb-1">{card.value}</p>
-            <p className="text-xs text-gray-400">{card.label}</p>
-          </div>
-        ))}
-      </div>
+          ))
+        )}
+      </motion.div>
 
       {/* Charts Row */}
-      <div className="grid lg:grid-cols-2 gap-6">
+      <motion.div variants={item} className="grid lg:grid-cols-2 gap-6">
         {/* GDP & Inflation Chart */}
+        {loading ? <Skeleton className="h-[400px] rounded-2xl bg-white/5" /> : (
         <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-sm font-semibold text-gray-200">Historical Economic Indicators</h3>
@@ -156,11 +207,14 @@ export default function Dashboard() {
               <Legend />
               <Line type="monotone" dataKey="gdp" stroke="#06b6d4" strokeWidth={3} dot={{ fill: '#06b6d4', r: 4 }} name="GDP Growth %" />
               <Line type="monotone" dataKey="inflation" stroke="#ef4444" strokeWidth={3} dot={{ fill: '#ef4444', r: 4 }} name="Inflation %" />
+              <Brush dataKey="name" height={30} stroke="#64748b" fill="rgba(255,255,255,0.05)" />
             </LineChart>
           </ResponsiveContainer>
         </div>
+        )}
 
         {/* Environment Chart */}
+        {loading ? <Skeleton className="h-[400px] rounded-2xl bg-white/5" /> : (
         <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-sm font-semibold text-gray-200">Environmental Impact Trend</h3>
@@ -185,11 +239,73 @@ export default function Dashboard() {
             </AreaChart>
           </ResponsiveContainer>
         </div>
-      </div>
+        )}
+      </motion.div>
+
+      {/* Advanced Data Table Row */}
+      <motion.div variants={item} className="glass-card p-6 overflow-hidden">
+        <h3 className="text-sm font-semibold text-gray-200 mb-6">Simulation History Ledger</h3>
+        {loading ? <Skeleton className="h-[300px] rounded-2xl bg-white/5" /> : (
+          <div className="w-full overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                {table.getHeaderGroups().map(headerGroup => (
+                  <tr key={headerGroup.id} className="border-b border-white/10">
+                    {headerGroup.headers.map(header => (
+                      <th 
+                        key={header.id} 
+                        className="py-3 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white"
+                        onClick={header.column.getToggleSortingHandler()}
+                      >
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                        {{ asc: ' ▲', desc: ' ▼' }[header.column.getIsSorted()] ?? null}
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+              <tbody>
+                {table.getRowModel().rows.map(row => (
+                  <tr key={row.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                    {row.getVisibleCells().map(cell => (
+                      <td key={cell.id} className="py-3 px-4 text-sm text-gray-300">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            
+            {/* Pagination Controls */}
+            <div className="flex items-center justify-between mt-4 text-sm text-gray-400">
+              <span>
+                Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
+              </span>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => table.previousPage()} 
+                  disabled={!table.getCanPreviousPage()}
+                  className="px-3 py-1 rounded-md bg-white/5 disabled:opacity-50 hover:bg-white/10 transition-colors"
+                >
+                  Previous
+                </button>
+                <button 
+                  onClick={() => table.nextPage()} 
+                  disabled={!table.getCanNextPage()}
+                  className="px-3 py-1 rounded-md bg-white/5 disabled:opacity-50 hover:bg-white/10 transition-colors"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </motion.div>
 
       {/* Model Info */}
       {modelInfo && (
-        <div className="glass-card p-6">
+        <motion.div variants={item} className="glass-card p-6">
           <h3 className="text-sm font-semibold text-gray-200 mb-4">ML Model Information</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-4 rounded-xl bg-dark-300/50">
@@ -209,8 +325,8 @@ export default function Dashboard() {
               <p className="text-sm font-semibold text-white">{modelInfo.training_samples || '5,000'}</p>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   )
 }

@@ -7,7 +7,7 @@ import {
 import { useAuth } from '../contexts/AuthContext'
 
 const navItems = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/simulator', label: 'Policy Simulator', icon: Sliders },
   { path: '/results', label: 'Simulation Results', icon: BarChart3 },
   { path: '/scenarios', label: 'Scenario Comparison', icon: GitCompare },
@@ -34,7 +34,7 @@ export default function Layout({ children, onLogout }) {
           </div>
           {!collapsed && (
             <div>
-              <h1 className="font-display font-bold text-lg text-white">PolicyAI</h1>
+              <h1 className="font-display font-bold text-lg text-white">Nexora</h1>
               <p className="text-xs text-gray-500">Impact Simulator</p>
             </div>
           )}
@@ -46,7 +46,6 @@ export default function Layout({ children, onLogout }) {
             <NavLink
               key={path}
               to={path}
-              end={path === '/'}
               className={({ isActive }) =>
                 `nav-link ${isActive ? 'active' : ''}`
               }

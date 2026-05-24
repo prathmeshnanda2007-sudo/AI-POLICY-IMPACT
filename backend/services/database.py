@@ -1,170 +1,192 @@
-"""SQLite database service for policy simulator."""
-
-import sqlite3
-import json
-import re
 import os
+import json
 from datetime import datetime
+from typing import Optional
 
-DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'policy_simulator.db')
+from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, ForeignKey, Text
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship
+from sqlalchemy.exc import IntegrityError
+
+# Read the connection URL from environment or default to local SQLite
+# To switch to PostgreSQL, simply set DATABASE_URL=postgresql://user:password@localhost/policy_simulator
+DB_URL = os.environ.get("DATABASE_URL", f"sqlite:///{os.path.join(os.path.dirname(__file__), '..', 'data', 'policy_simulator.db')}")
+
+# Create SQLAlchemy engine
+# connect_args={'check_same_thread': False} is only needed for SQLite
+connect_args = {'check_same_thread': False} if DB_URL.startswith("sqlite") else {}
+engine = create_engine(DB_URL, connect_args=connect_args)
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+# --- Database Models ---
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    name = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    last_login = Column(DateTime, nullable=True)
+
+    scenarios = relationship("Scenario", back_populates="owner")
+    simulations = relationship("SimulationHistory", back_populates="user")
 
 
-def get_connection():
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    return conn
+class Scenario(Base):
+    __tablename__ = "scenarios"
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String, nullable=False)
+    inputs = Column(Text, nullable=False)  # Stored as JSON string
+    results = Column(Text, nullable=False) # Stored as JSON string
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    owner = relationship("User", back_populates="scenarios")
+
+
+class SimulationHistory(Base):
+    __tablename__ = "simulation_history"
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    inputs = Column(Text, nullable=False)
+    results = Column(Text, nullable=False)
+    model_type = Column(String, nullable=True)
+    confidence = Column(Float, nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="simulations")
+
+
+class ModelTrainingLog(Base):
+    __tablename__ = "model_training_log"
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    model_type = Column(String, nullable=False)
+    rmse = Column(Float, nullable=True)
+    r2_score = Column(Float, nullable=True)
+    training_samples = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 
 def init_db():
     """Create tables if they don't exist."""
-    conn = get_connection()
-    cursor = conn.cursor()
+    # This will create tables in both SQLite and PostgreSQL automatically.
+    Base.metadata.create_all(bind=engine)
+    print(f"[OK] Database initialized at {DB_URL}")
 
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT NOT NULL UNIQUE,
-            password_hash TEXT NOT NULL,
-            name TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            last_login TIMESTAMP
-        )
-    ''')
 
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS scenarios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            inputs TEXT NOT NULL,
-            results TEXT NOT NULL,
-            user_id INTEGER,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id)
-        )
-    ''')
+# --- DB Session Dependency ---
 
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS simulation_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            inputs TEXT NOT NULL,
-            results TEXT NOT NULL,
-            model_type TEXT,
-            confidence REAL,
-            user_id INTEGER,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id)
-        )
-    ''')
-
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS model_training_log (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            model_type TEXT NOT NULL,
-            rmse REAL,
-            r2_score REAL,
-            training_samples INTEGER,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-
-    conn.commit()
-    conn.close()
-    print("[OK] Database initialized")
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 # --- Scenarios CRUD ---
 
 def save_scenario(name: str, inputs: dict, results: dict) -> dict:
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        'INSERT INTO scenarios (name, inputs, results) VALUES (?, ?, ?)',
-        (name, json.dumps(inputs), json.dumps(results))
+    db = SessionLocal()
+    scenario = Scenario(
+        name=name,
+        inputs=json.dumps(inputs),
+        results=json.dumps(results)
     )
-    conn.commit()
-    scenario_id = cursor.lastrowid
-    conn.close()
-    return {'id': scenario_id, 'name': name, 'inputs': inputs, 'results': results}
+    db.add(scenario)
+    db.commit()
+    db.refresh(scenario)
+    result = {'id': scenario.id, 'name': scenario.name, 'inputs': inputs, 'results': results}
+    db.close()
+    return result
 
 
 def get_all_scenarios() -> list:
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM scenarios ORDER BY created_at DESC')
-    rows = cursor.fetchall()
-    conn.close()
-    return [
-        {
-            'id': row['id'],
-            'name': row['name'],
-            'inputs': json.loads(row['inputs']),
-            'results': json.loads(row['results']),
-            'created_at': row['created_at'],
-        }
-        for row in rows
-    ]
+    db = SessionLocal()
+    try:
+        rows = db.query(Scenario).order_by(Scenario.created_at.desc()).all()
+        return [
+            {
+                'id': row.id,
+                'name': row.name,
+                'inputs': json.loads(row.inputs),
+                'results': json.loads(row.results),
+                'created_at': row.created_at.isoformat() if row.created_at else None,
+            }
+            for row in rows
+        ]
+    finally:
+        db.close()
 
 
 def delete_scenario(scenario_id: int) -> bool:
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute('DELETE FROM scenarios WHERE id = ?', (scenario_id,))
-    conn.commit()
-    deleted = cursor.rowcount > 0
-    conn.close()
-    return deleted
+    db = SessionLocal()
+    scenario = db.query(Scenario).filter(Scenario.id == scenario_id).first()
+    if scenario:
+        db.delete(scenario)
+        db.commit()
+        db.close()
+        return True
+    db.close()
+    return False
 
 
 # --- Simulation History ---
 
 def save_simulation(inputs: dict, results: dict, model_type: str = None, confidence: float = None):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        'INSERT INTO simulation_history (inputs, results, model_type, confidence) VALUES (?, ?, ?, ?)',
-        (json.dumps(inputs), json.dumps(results), model_type, confidence)
+    db = SessionLocal()
+    sim = SimulationHistory(
+        inputs=json.dumps(inputs),
+        results=json.dumps(results),
+        model_type=model_type,
+        confidence=confidence
     )
-    conn.commit()
-    sim_id = cursor.lastrowid
-    conn.close()
-    return sim_id
+    db.add(sim)
+    db.commit()
+    db.refresh(sim)
+    db.close()
+    return sim.id
 
 
 def get_history(limit: int = 50) -> list:
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM simulation_history ORDER BY created_at DESC LIMIT ?', (limit,))
-    rows = cursor.fetchall()
-    conn.close()
-    return [
-        {
-            'id': row['id'],
-            'inputs': json.loads(row['inputs']),
-            'results': json.loads(row['results']),
-            'model_type': row['model_type'],
-            'confidence': row['confidence'],
-            'timestamp': row['created_at'],
-        }
-        for row in rows
-    ]
+    db = SessionLocal()
+    try:
+        rows = db.query(SimulationHistory).order_by(SimulationHistory.created_at.desc()).limit(limit).all()
+        return [
+            {
+                'id': row.id,
+                'inputs': json.loads(row.inputs),
+                'results': json.loads(row.results),
+                'model_type': row.model_type,
+                'confidence': row.confidence,
+                'timestamp': row.created_at.isoformat() if row.created_at else None,
+            }
+            for row in rows
+        ]
+    finally:
+        db.close()
 
 
 # --- Training Log ---
 
 def log_training(model_type: str, rmse: float, r2: float, samples: int):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        'INSERT INTO model_training_log (model_type, rmse, r2_score, training_samples) VALUES (?, ?, ?, ?)',
-        (model_type, rmse, r2, samples)
+    db = SessionLocal()
+    log = ModelTrainingLog(
+        model_type=model_type,
+        rmse=rmse,
+        r2_score=r2,
+        training_samples=samples
     )
-    conn.commit()
-    conn.close()
+    db.add(log)
+    db.commit()
+    db.close()
 
 
 # --- User Management ---
+
+import re
 
 def create_user(email: str, password_hash: str, name: str) -> dict:
     """Create a new user. Returns user dict or raises on duplicate."""
@@ -174,64 +196,57 @@ def create_user(email: str, password_hash: str, name: str) -> dict:
     if len(name.strip()) < 2:
         raise ValueError('Name must be at least 2 characters')
 
-    conn = get_connection()
-    cursor = conn.cursor()
+    db = SessionLocal()
+    user = User(
+        email=email,
+        password_hash=password_hash,
+        name=name.strip()
+    )
     try:
-        cursor.execute(
-            'INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)',
-            (email, password_hash, name.strip())
-        )
-        conn.commit()
-        user_id = cursor.lastrowid
-        return {'id': user_id, 'email': email, 'name': name.strip()}
-    except sqlite3.IntegrityError:
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        user_dict = {'id': user.id, 'email': user.email, 'name': user.name}
+    except IntegrityError:
+        db.rollback()
         raise ValueError('Email already registered')
     finally:
-        conn.close()
+        db.close()
+    return user_dict
 
 
-def get_user_by_email(email: str) -> dict | None:
+def get_user_by_email(email: str) -> Optional[dict]:
     """Find a user by email. Returns dict with password_hash or None."""
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM users WHERE email = ?', (email.lower().strip(),))
-    row = cursor.fetchone()
-    conn.close()
-    if row is None:
-        return None
-    return {
-        'id': row['id'],
-        'email': row['email'],
-        'password_hash': row['password_hash'],
-        'name': row['name'],
-        'created_at': row['created_at'],
-    }
+    db = SessionLocal()
+    user = db.query(User).filter(User.email == email.lower().strip()).first()
+    db.close()
+    if user:
+        return {
+            'id': user.id,
+            'email': user.email,
+            'name': user.name,
+            'password_hash': user.password_hash
+        }
+    return None
 
-
-def get_user_by_id(user_id: int) -> dict | None:
-    """Find a user by ID."""
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT id, email, name, created_at FROM users WHERE id = ?', (user_id,))
-    row = cursor.fetchone()
-    conn.close()
-    if row is None:
-        return None
-    return {
-        'id': row['id'],
-        'email': row['email'],
-        'name': row['name'],
-        'created_at': row['created_at'],
-    }
-
+def get_user_by_id(user_id: int) -> Optional[dict]:
+    """Find a user by id."""
+    db = SessionLocal()
+    user = db.query(User).filter(User.id == user_id).first()
+    db.close()
+    if user:
+        return {
+            'id': user.id,
+            'email': user.email,
+            'name': user.name
+        }
+    return None
 
 def update_last_login(user_id: int):
-    """Update user's last login timestamp."""
-    conn = get_connection()
-    conn.execute('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', (user_id,))
-    conn.commit()
-    conn.close()
-
-
-# Initialize on import
-init_db()
+    """Update user last login timestamp."""
+    db = SessionLocal()
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        user.last_login = datetime.utcnow()
+        db.commit()
+    db.close()

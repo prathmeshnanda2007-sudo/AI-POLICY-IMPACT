@@ -19,8 +19,13 @@ from services.database import (
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-# Load model on startup
-model, scaler, metadata = load_model()
+# Load model on startup (trains if not found)
+try:
+    model, scaler, metadata = load_model()
+except Exception as _load_err:
+    import logging as _log
+    _log.getLogger(__name__).error(f"Model load failed at import: {_load_err}. Will retry on first request.")
+    model, scaler, metadata = None, None, {}
 
 
 # --- Request Schemas ---
@@ -62,7 +67,13 @@ class RecommendRequest(BaseModel):
 @router.post("/predict")
 async def predict(inputs: PolicyInput, current_user: dict = Depends(get_current_user)):
     """Run policy simulation and return predicted outcomes."""
+    global model, scaler, metadata
     try:
+        # Lazy load: train if model wasn't available at startup
+        if model is None or scaler is None:
+            logger.info("Model not loaded, training now...")
+            model, scaler, metadata = train_and_select_best()
+
         input_dict = inputs.model_dump()
         result = predict_policy(input_dict, model, scaler)
 

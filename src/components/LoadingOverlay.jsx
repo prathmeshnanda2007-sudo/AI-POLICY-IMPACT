@@ -1,7 +1,7 @@
 import React from 'react'
-import { Brain, Loader2 } from 'lucide-react'
+import { Brain, Loader2, Cpu } from 'lucide-react'
 
-export default function LoadingOverlay({ message = 'Running ML Model...' }) {
+export default function LoadingOverlay({ message = 'Running ML Model...', progressStep }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-dark-500/80 backdrop-blur-sm">
       <div className="glass-card p-10 flex flex-col items-center gap-5 animate-fade-in">
@@ -13,7 +13,7 @@ export default function LoadingOverlay({ message = 'Running ML Model...' }) {
         </div>
         <div className="text-center">
           <p className="text-lg font-semibold text-white mb-1">{message}</p>
-          <p className="text-sm text-gray-400">Analyzing policy parameters with Random Forest model</p>
+          <p className="text-sm text-gray-400">{progressStep || 'Analyzing policy parameters with Random Forest model'}</p>
         </div>
         <div className="flex gap-1.5">
           {[0, 1, 2].map(i => (

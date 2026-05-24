@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Brain, Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle, Loader2 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { MeshGradient } from "@paper-design/shaders-react"
 
 export default function Login() {
   const navigate = useNavigate()
@@ -21,7 +22,7 @@ export default function Login() {
     setError(null)
     try {
       await login(form.email, form.password)
-      navigate('/', { replace: true })
+      navigate('/dashboard', { replace: true })
     } catch (err) {
       setError(err.message)
     } finally {
@@ -30,51 +31,55 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-500 flex items-center justify-center p-4 overflow-hidden">
-      {/* Background effects */}
-      <div className="fixed inset-0 bg-grid opacity-20" />
-      <div className="fixed top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-primary-500/8 rounded-full blur-[100px]" />
-      <div className="fixed bottom-0 right-0 w-[400px] h-[300px] bg-primary-700/5 rounded-full blur-[80px]" />
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 overflow-hidden relative">
+      {/* Mesh Gradient background */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <MeshGradient
+          className="absolute inset-0 w-full h-full opacity-60"
+          colors={["#ffffff", "#e0f2fe", "#bae6fd", "#7dd3fc", "#0ea5e9"]}
+          speed={0.15}
+          backgroundColor="#f8fafc"
+        />
+      </div>
 
       <div className="relative z-10 w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-3 mb-6 group">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg shadow-primary-500/25 group-hover:shadow-primary-500/40 transition-shadow">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
               <Brain className="w-6 h-6 text-white" />
             </div>
-            <span className="font-display font-bold text-2xl text-white">PolicyAI</span>
+            <span className="font-display font-bold text-2xl text-slate-900">Nexora</span>
           </Link>
-          <h1 className="text-2xl font-display font-bold text-white mb-2">Welcome back</h1>
-          <p className="text-sm text-gray-400">Sign in to continue to your dashboard</p>
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Welcome back</h2>
+          <p className="text-slate-500 mt-2 text-sm">Sign in to your account to continue</p>
         </div>
 
         {/* Login Form */}
-        <div className="glass-card p-8">
+        <div className="glass-card p-8 bg-white/50 backdrop-blur-xl border border-white/50 shadow-2xl rounded-3xl">
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Error Alert */}
             {error && (
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20 animate-slide-up">
-                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
-                <p className="text-sm text-red-300">{error}</p>
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-red-50 border border-red-100 animate-slide-up">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                <p className="text-sm text-red-600">{error}</p>
               </div>
             )}
 
             {/* Email */}
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-2" htmlFor="login-email">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <label className="block text-sm font-medium text-slate-700 mb-1.5 ml-1">Email Address</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-slate-400 group-focus-within:text-cyan-500 transition-colors" />
+                </div>
                 <input
-                  id="login-email"
                   type="email"
+                  required
                   value={form.email}
                   onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
+                  className="block w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all sm:text-sm"
                   placeholder="you@example.com"
-                  className="input-dark pl-11"
-                  autoComplete="email"
                   autoFocus
                 />
               </div>
@@ -82,24 +87,23 @@ export default function Login() {
 
             {/* Password */}
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-2" htmlFor="login-password">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <label className="block text-sm font-medium text-slate-700 mb-1.5 ml-1">Password</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-slate-400 group-focus-within:text-cyan-500 transition-colors" />
+                </div>
                 <input
-                  id="login-password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
+                  required
                   value={form.password}
                   onChange={(e) => setForm(prev => ({ ...prev, password: e.target.value }))}
+                  className="block w-full pl-11 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all sm:text-sm"
                   placeholder="••••••••"
-                  className="input-dark pl-11 pr-11"
-                  autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -144,7 +148,7 @@ export default function Login() {
 
         {/* Footer */}
         <p className="text-center text-xs text-gray-600 mt-6">
-          © 2026 PolicyAI. Secured with JWT authentication.
+          © 2026 Nexora. Secured with JWT authentication.
         </p>
       </div>
     </div>

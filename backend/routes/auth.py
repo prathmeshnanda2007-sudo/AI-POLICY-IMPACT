@@ -1,4 +1,4 @@
-"""Authentication Routes for PolicyAI."""
+"""Authentication Routes for Nexora."""
 
 from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel, EmailStr, Field

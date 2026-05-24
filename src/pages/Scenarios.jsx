@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { Plus, Trash2, GitCompare, Lightbulb, BarChart3 } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Plus, Trash2, GitCompare, Lightbulb, BarChart3, Download, FileText } from 'lucide-react'
+import html2canvas from 'html2canvas'
+import jsPDF from 'jspdf'
 import PolicySlider from '../components/PolicySlider'
 import { ComparisonChart } from '../components/Charts'
 import { POLICY_CONFIG, POLICY_DEFAULTS, OUTPUT_CONFIG } from '../utils/constants'
@@ -12,6 +15,19 @@ export default function Scenarios() {
   const [comparing, setComparing] = useState(false)
   const [recommendation, setRecommendation] = useState(null)
   const [loadingRec, setLoadingRec] = useState(false)
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  }
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } }
+  }
 
   useEffect(() => {
     loadScenarios()
@@ -70,10 +86,63 @@ export default function Scenarios() {
     }
   }
 
+  const handleDownloadComparison = () => {
+    if (!comparisonResults) return
+    const exportData = {
+      timestamp: new Date().toISOString(),
+      scenarios_compared: compareList,
+      comparison_data: comparisonResults.raw
+    }
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `scenario-comparison-${Date.now()}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleDownloadComparisonPDF = async () => {
+    const el = document.getElementById('comparison-panel-export')
+    if (!el) return
+    try {
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#070b14'
+      })
+      const imgData = canvas.toDataURL('image/png')
+      const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'px',
+        format: [canvas.width / 2, canvas.height / 2]
+      })
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2)
+      pdf.save(`scenario-comparison-${Date.now()}.pdf`)
+    } catch (err) {
+      console.error('Failed to export PDF:', err)
+    }
+  }
+
   const handleRecommendation = async () => {
     setLoadingRec(true)
     try {
-      const target = { gdp_growth: 4.0, inflation: 2.5, employment_rate: 96, environment_score: 80 }
+      // Find best metrics from user's actual saved scenarios
+      const bestGDP = savedScenarios.length > 0 
+        ? Math.max(...savedScenarios.map(s => s.results?.gdp_growth || 0)) 
+        : 3.0;
+      const bestEnv = savedScenarios.length > 0
+        ? Math.max(...savedScenarios.map(s => s.results?.environment_score || 0))
+        : 60.0;
+        
+      // Create a dynamic target aiming to improve their best metrics
+      const target = { 
+        gdp_growth: Math.min(bestGDP * 1.15, 8.0), 
+        inflation: 2.0, 
+        employment_rate: 96, 
+        environment_score: Math.min(bestEnv * 1.15, 95) 
+      }
+      
       const data = await getRecommendation(target)
       setRecommendation(data)
     } catch (err) {
@@ -84,8 +153,8 @@ export default function Scenarios() {
   }
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      <div className="flex items-center justify-between">
+    <motion.div variants={container} initial="hidden" animate="show" className="space-y-8">
+      <motion.div variants={item} className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-display font-bold text-white mb-1">Scenario Comparison</h1>
           <p className="text-sm text-gray-400">Compare saved scenarios and get AI-powered recommendations</p>
@@ -98,11 +167,11 @@ export default function Scenarios() {
           <Lightbulb className="w-4 h-4" />
           {loadingRec ? 'Thinking...' : 'AI Recommendation'}
         </button>
-      </div>
+      </motion.div>
 
       {/* AI Recommendation */}
       {recommendation && (
-        <div className="glass-card p-6 border-primary-500/20 glow-border">
+        <motion.div variants={item} className="glass-card p-6 border-primary-500/20 glow-border">
           <div className="flex items-center gap-2 mb-4">
             <Lightbulb className="w-5 h-5 text-primary-400" />
             <h3 className="text-sm font-semibold text-white">AI Policy Recommendation</h3>
@@ -141,10 +210,10 @@ export default function Scenarios() {
               </div>
             </div>
           )}
-        </div>
+        </motion.div>
       )}
 
-      <div className="grid lg:grid-cols-12 gap-8">
+      <motion.div variants={item} className="grid lg:grid-cols-12 gap-8">
         {/* Scenarios List */}
         <div className="lg:col-span-5 space-y-4">
           <div className="flex items-center justify-between">
@@ -217,12 +286,32 @@ export default function Scenarios() {
         </div>
 
         {/* Comparison Results */}
-        <div className="lg:col-span-7">
+        <div className="lg:col-span-7" id="comparison-panel-export">
           {comparisonResults ? (
-            <ComparisonChart
-              data={comparisonResults.data}
-              metrics={comparisonResults.metrics}
-            />
+            <div className="space-y-4">
+              <div className="flex justify-end gap-2">
+                <button 
+                  onClick={handleDownloadComparison}
+                  className="btn-secondary text-xs px-4 py-2 flex items-center gap-2"
+                  title="Download JSON data"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  JSON
+                </button>
+                <button 
+                  onClick={handleDownloadComparisonPDF}
+                  className="btn-secondary text-xs px-4 py-2 flex items-center gap-2"
+                  title="Download PDF Report"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  PDF Report
+                </button>
+              </div>
+              <ComparisonChart
+                data={comparisonResults.data}
+                metrics={comparisonResults.metrics}
+              />
+            </div>
           ) : (
             <div className="glass-card p-16 text-center">
               <GitCompare className="w-10 h-10 text-gray-600 mx-auto mb-3" />
@@ -233,7 +322,7 @@ export default function Scenarios() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }

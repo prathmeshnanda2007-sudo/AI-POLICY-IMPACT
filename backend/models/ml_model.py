@@ -16,6 +16,9 @@ from sklearn.preprocessing import StandardScaler
 import joblib
 import os
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 MODEL_DIR = os.path.join(os.path.dirname(__file__), 'data')
 MODEL_PATH = os.path.join(MODEL_DIR, 'model.pkl')
@@ -124,7 +127,7 @@ def train_and_select_best():
     """Train multiple models, compare RMSE, save the best."""
     os.makedirs(MODEL_DIR, exist_ok=True)
 
-    print("📊 Generating 5,000 synthetic policy samples...")
+    logger.info("[ML] Generating 5,000 synthetic policy samples...")
     X, y = generate_synthetic_data(5000)
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -145,18 +148,18 @@ def train_and_select_best():
 
     results = {}
     for name, model in models.items():
-        print(f"\n🔧 Training {name}...")
+        logger.info(f"[ML] Training {name}...")
         model.fit(X_train_scaled, y_train)
         y_pred = model.predict(X_test_scaled)
         rmse = np.sqrt(mean_squared_error(y_test, y_pred))
         r2 = r2_score(y_test, y_pred)
         results[name] = {'model': model, 'rmse': rmse, 'r2': r2}
-        print(f"   RMSE: {rmse:.4f}  |  R²: {r2:.4f}")
+        logger.info(f"[ML]   {name}: RMSE={rmse:.4f}  R2={r2:.4f}")
 
     # Select best by RMSE
     best_name = min(results, key=lambda k: results[k]['rmse'])
     best = results[best_name]
-    print(f"\n✅ Best model: {best_name} (RMSE: {best['rmse']:.4f}, R²: {best['r2']:.4f})")
+    logger.info(f"[ML] Best model: {best_name} (RMSE={best['rmse']:.4f}, R2={best['r2']:.4f})")
 
     # Save model and scaler
     joblib.dump(best['model'], MODEL_PATH)
@@ -164,8 +167,10 @@ def train_and_select_best():
 
     # Feature importance - use permutation importance for any model type
     from sklearn.inspection import permutation_importance
-    print("\n📈 Computing feature importance...")
-    perm_importance = permutation_importance(best['model'], X_test_scaled, y_test, n_repeats=10, random_state=42, n_jobs=-1)
+    logger.info("[ML] Computing feature importance...")
+    perm_importance = permutation_importance(
+        best['model'], X_test_scaled, y_test, n_repeats=10, random_state=42, n_jobs=-1
+    )
     feature_importance = {}
     for j, feat in enumerate(FEATURE_NAMES):
         feature_importance[feat] = float(max(0, perm_importance.importances_mean[j]))
@@ -184,9 +189,9 @@ def train_and_select_best():
     with open(METADATA_PATH, 'w') as f:
         json.dump(metadata, f, indent=2)
 
-    print(f"\n💾 Model saved to {MODEL_PATH}")
-    print(f"   Scaler saved to {SCALER_PATH}")
-    print(f"   Metadata saved to {METADATA_PATH}")
+    logger.info(f"[ML] Model saved to {MODEL_PATH}")
+    logger.info(f"[ML] Scaler saved to {SCALER_PATH}")
+    logger.info(f"[ML] Metadata saved to {METADATA_PATH}")
     return best['model'], scaler, metadata
 
 
@@ -202,6 +207,16 @@ def load_model():
         return model, scaler, metadata
     else:
         return train_and_select_best()
+
+
+# Physical output bounds — clamp predictions to realistic ranges
+OUTPUT_BOUNDS = {
+    'gdp_growth':        (-15.0, 20.0),
+    'inflation':         (-2.0,  30.0),
+    'employment_rate':   (70.0,  99.5),   # BUG FIX: was predicting 101.9% in Max Stimulus
+    'environment_score': (0.0,   100.0),
+    'public_satisfaction': (0.0, 100.0),
+}
 
 
 def predict_policy(input_data: dict, model=None, scaler=None):
@@ -221,7 +236,10 @@ def predict_policy(input_data: dict, model=None, scaler=None):
 
     result = {}
     for i, name in enumerate(OUTPUT_NAMES):
-        result[name] = float(predictions[i])
+        raw = float(predictions[i])
+        # Clamp to physical bounds so UI never shows impossible values
+        lo, hi = OUTPUT_BOUNDS.get(name, (-1e9, 1e9))
+        result[name] = round(max(lo, min(hi, raw)), 4)
     result['confidence'] = float(confidence)
 
     return result
@@ -265,39 +283,61 @@ def sensitivity_analysis(base_inputs: dict, target_variable: str = 'gdp_growth')
 
 
 def recommend_policy(target_outcomes: dict):
-    """Simple grid search over policy space to find inputs closest to desired outcomes."""
+    """Use SciPy optimization (L-BFGS-B) over the ML model's prediction surface to find the optimal policy."""
     model, scaler, _ = load_model()
     
-    best_score = float('inf')
-    best_inputs = None
-    best_predictions = None
-
-    np.random.seed(123)
-    # Random search over 2000 candidate policies
-    for _ in range(2000):
-        candidate = {
-            'tax_rate': np.random.uniform(5, 55),
-            'fuel_price': np.random.uniform(1.5, 9.0),
-            'subsidy': np.random.uniform(0, 45),
-            'public_spending': np.random.uniform(12, 55),
-            'interest_rate': np.random.uniform(0.25, 18),
-            'environmental_regulation': np.random.uniform(5, 95),
-        }
-        pred = predict_policy(candidate, model, scaler)
+    def objective(x):
+        # x: [tax_rate, fuel_price, subsidy, public_spending, interest_rate, env_regulation]
+        features = pd.DataFrame([x], columns=FEATURE_NAMES)
+        features_scaled = scaler.transform(features)
+        pred = model.predict(features_scaled)[0]
         
         score = 0
-        for key, target_val in target_outcomes.items():
-            if key in pred:
-                score += (pred[key] - target_val) ** 2
-        
-        if score < best_score:
-            best_score = score
-            best_inputs = candidate
-            best_predictions = pred
+        for i, name in enumerate(OUTPUT_NAMES):
+            if name in target_outcomes:
+                # Calculate squared error, normalized to avoid dominant metrics
+                target_val = target_outcomes[name]
+                weight = 1.0
+                if name == 'inflation':
+                    weight = 2.0 # penalize inflation heavily
+                score += weight * ((pred[i] - target_val) / max(1.0, abs(target_val))) ** 2
+        return score
 
-    # Round inputs
-    for k in best_inputs:
-        best_inputs[k] = round(best_inputs[k], 2)
+    # Start optimization from a neutral center point, or we could add random restarts for global search
+    # We will do 3 random restarts to find a good global minimum
+    bounds = [
+        (5, 55),    # tax_rate
+        (1.5, 9.0), # fuel_price
+        (0, 45),    # subsidy
+        (12, 55),   # public_spending
+        (0.25, 18), # interest_rate
+        (5, 95),    # env_regulation
+    ]
+    
+    from scipy.optimize import minimize
+    import numpy as np
+    
+    best_score = float('inf')
+    best_x = None
+    
+    # 3 random starts to avoid local minima
+    for _ in range(3):
+        x0 = [np.random.uniform(b[0], b[1]) for b in bounds]
+        res = minimize(objective, x0, method='L-BFGS-B', bounds=bounds)
+        if res.fun < best_score:
+            best_score = res.fun
+            best_x = res.x
+
+    best_inputs = {
+        'tax_rate': round(best_x[0], 2),
+        'fuel_price': round(best_x[1], 2),
+        'subsidy': round(best_x[2], 2),
+        'public_spending': round(best_x[3], 2),
+        'interest_rate': round(best_x[4], 2),
+        'environmental_regulation': round(best_x[5], 2),
+    }
+
+    best_predictions = predict_policy(best_inputs, model, scaler)
 
     return {
         'recommended_inputs': best_inputs,

@@ -1,0 +1,17 @@
+{
+  "score": 97,
+  "total": 39,
+  "passed": 38,
+  "failed": 0,
+  "warnings": 1,
+  "failures": [],
+  "warnings_list": [
+    {
+      "name": "JWT Secret",
+      "msg": "Still using dev secret \u2014 set JWT_SECRET env var in production"
+    }
+  ],
+  "model": "LinearRegression",
+  "r2_score": 0.9509944553531836,
+  "rmse": 1.1493612994109592
+}

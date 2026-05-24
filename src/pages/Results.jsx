@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { Clock, Trash2, Eye, Download, Filter } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Clock, Trash2, Eye, Download, Share2, Search, Filter, AlertTriangle } from 'lucide-react'
 import { getHistory } from '../services/api'
 import { OUTPUT_CONFIG, POLICY_CONFIG, formatValue } from '../utils/constants'
 import { GDPChart, InflationChart } from '../components/Charts'
@@ -8,6 +9,20 @@ export default function Results() {
   const [history, setHistory] = useState([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState(null)
+  const [searchTerm, setSearchTerm] = useState('')
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  }
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } }
+  }
 
   useEffect(() => {
     loadHistory()
@@ -37,8 +52,8 @@ export default function Results() {
   }
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      <div className="flex items-center justify-between">
+    <motion.div variants={container} initial="hidden" animate="show" className="space-y-8">
+      <motion.div variants={item} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-display font-bold text-white mb-1">Simulation Results</h1>
           <p className="text-sm text-gray-400">History of all past simulations and predictions</p>
@@ -47,9 +62,10 @@ export default function Results() {
           <Clock className="w-3.5 h-3.5" />
           {history.length} simulations recorded
         </div>
-      </div>
+      </motion.div>
 
-      <div className="grid lg:grid-cols-12 gap-8">
+      {/* Results Grid */}
+      <motion.div variants={item} className="grid lg:grid-cols-12 gap-8">
         {/* History List */}
         <div className="lg:col-span-5 space-y-3">
           {loading ? (
@@ -149,7 +165,8 @@ export default function Results() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+
+    </motion.div>
   )
 }

@@ -1,4 +1,4 @@
-"""JWT Authentication Service for PolicyAI.
+"""JWT Authentication Service for Nexora.
 
 Handles password hashing, JWT token creation/verification,
 and provides a FastAPI dependency for protecting routes.
@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 JWT_SECRET = os.environ.get("JWT_SECRET", "policyai_dev_secret_key_change_in_production_2026")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = int(os.environ.get("JWT_EXPIRATION_HOURS", "72"))
+
+if "dev" in JWT_SECRET.lower() or "change" in JWT_SECRET.lower():
+    logger.warning("[SECURITY] JWT_SECRET is using the development default. Set JWT_SECRET env var in production!")
 
 security = HTTPBearer(auto_error=False)
 
@@ -81,7 +84,7 @@ def create_access_token(user_id: int, email: str, name: str) -> str:
     header_b64 = _b64_encode(json.dumps(header, separators=(',', ':')).encode('utf-8'))
     payload_b64 = _b64_encode(json.dumps(payload, separators=(',', ':')).encode('utf-8'))
     message = f"{header_b64}.{payload_b64}"
-    signature = hmac.new(JWT_SECRET.encode('utf-8'), message.encode('utf-8'), hashlib.sha256).digest()
+    signature = hmac.new(JWT_SECRET.encode('utf-8'), message.encode('utf-8'), hashlib.sha256).digest()  # type: ignore[attr-defined]
     sig_b64 = _b64_encode(signature)
 
     return f"{message}.{sig_b64}"
@@ -98,7 +101,7 @@ def decode_token(token: str) -> Optional[dict]:
 
         # Verify signature
         message = f"{header_b64}.{payload_b64}"
-        expected_sig = hmac.new(JWT_SECRET.encode('utf-8'), message.encode('utf-8'), hashlib.sha256).digest()
+        expected_sig = hmac.new(JWT_SECRET.encode('utf-8'), message.encode('utf-8'), hashlib.sha256).digest()  # type: ignore[attr-defined]
         actual_sig = _b64_decode(sig_b64)
         if not hmac.compare_digest(expected_sig, actual_sig):
             return None
@@ -106,8 +109,8 @@ def decode_token(token: str) -> Optional[dict]:
         # Decode payload
         payload = json.loads(_b64_decode(payload_b64))
 
-        # Check expiration
-        if payload.get('exp', 0) < time.time():
+        # Check expiration (allow 5s clock skew)
+        if payload.get('exp', 0) < (time.time() - 5):
             return None
 
         return payload

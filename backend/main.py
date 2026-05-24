@@ -8,6 +8,7 @@ and production-ready static file serving with SPA fallback.
 import logging
 import sys
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,7 +21,34 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     handlers=[logging.StreamHandler(sys.stdout)]
 )
-logger = logging.getLogger("PolicyAI")
+logger = logging.getLogger("Nexora")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup and shutdown lifecycle events."""
+    # --- Startup ---
+    logger.info("[STARTUP] Initializing database...")
+    try:
+        from services.database import init_db
+        init_db()
+        logger.info("[STARTUP] Database ready.")
+    except Exception as e:
+        logger.error(f"[STARTUP] Database init failed: {e}")
+
+    logger.info("[STARTUP] Verifying ML model...")
+    try:
+        from models.ml_model import load_model
+        model, scaler, meta = load_model()
+        logger.info(f"[STARTUP] Model loaded: {meta.get('model_type', 'unknown')} | R²={meta.get('r2_score', 0):.4f}")
+    except Exception as e:
+        logger.warning(f"[STARTUP] Model load warning: {e}")
+
+    yield  # Application runs here
+
+    # --- Shutdown ---
+    logger.info("[SHUTDOWN] Nexora backend shutting down.")
+
 
 # Create FastAPI app
 app = FastAPI(
@@ -29,22 +57,46 @@ app = FastAPI(
     version="2.5.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
-# CORS — allow frontend connections from any origin
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORS — allow frontend connections
+# NOTE: Wildcards in allow_origins don't work with allow_credentials=True in browsers
+_ENV = os.environ.get("ENVIRONMENT", "production")
+
+if _ENV == "development":
+    # Development: allow all origins
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=False,  # Must be False with wildcard
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    # Production: specific origins + regex for Vercel previews
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "http://localhost:5173",
+            "http://localhost:3000",
+            "https://ai-policy-impact-d9th.vercel.app",
+        ],
+        allow_origin_regex=r"https://.*\.vercel\.app",
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
 
 # Import and register API routes
 from routes.api import router
 from routes.auth import router as auth_router
+from routes.ws import router as ws_router
+
 app.include_router(router)
 app.include_router(auth_router)
+app.include_router(ws_router)
 
 
 @app.get("/api/status")

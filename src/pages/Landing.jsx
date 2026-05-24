@@ -1,193 +1,156 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
-import { Brain, ArrowRight, BarChart3, Cpu, Shield, Globe, Zap, ChevronRight } from 'lucide-react'
-import ShaderAnimation from '@/components/ui/spiral-shader'
+import React, { useEffect } from 'react'
+import { BarChart3, TrendingUp, Globe, Shield, Zap, Target } from 'lucide-react'
+import ShaderShowcase from '@/components/ui/hero'
+import Lenis from '@studio-freight/lenis'
+import { ZoomParallax } from '@/components/ui/zoom-parallax'
+
+// Feature card component
+function FeatureCard({ icon: Icon, title, description, colorClass }) {
+  return (
+    <div className="p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+      <div className={`w-14 h-14 rounded-2xl ${colorClass} flex items-center justify-center mb-6`}>
+        <Icon className="w-7 h-7 text-white" />
+      </div>
+      <h3 className="text-xl font-bold text-slate-900 mb-3">{title}</h3>
+      <p className="text-slate-600 leading-relaxed">{description}</p>
+    </div>
+  )
+}
 
 export default function Landing() {
+  useEffect(() => {
+    const lenis = new Lenis()
+   
+    function raf(time) {
+      lenis.raf(time)
+      requestAnimationFrame(raf)
+    }
+
+    requestAnimationFrame(raf)
+  }, [])
+
+  const parallaxImages = [
+    {
+      src: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1280&auto=format&fit=crop',
+      alt: 'Modern institutional architecture',
+    },
+    {
+      src: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1280&auto=format&fit=crop',
+      alt: 'Global network and connectivity',
+    },
+    {
+      src: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?q=80&w=1280&auto=format&fit=crop',
+      alt: 'Smart city infrastructure',
+    },
+    {
+      src: 'https://images.unsplash.com/photo-1466611653911-95081537e5b7?q=80&w=1280&auto=format&fit=crop',
+      alt: 'Sustainable wind energy',
+    },
+    {
+      src: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=1280&auto=format&fit=crop',
+      alt: 'AI neural network simulation',
+    },
+    {
+      src: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=1280&auto=format&fit=crop',
+      alt: 'Data server processing',
+    },
+    {
+      src: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1280&auto=format&fit=crop',
+      alt: 'Digital cyber infrastructure',
+    },
+  ]
+
   return (
-    <div className="min-h-screen bg-dark-500 overflow-hidden">
-      {/* Animated Spiral Shader Background */}
-      <div className="fixed inset-0 opacity-40">
-        <ShaderAnimation />
-      </div>
-      <div className="fixed inset-0 bg-gradient-to-b from-dark-500/30 via-transparent to-dark-500/90" />
-
-      {/* Navigation */}
-      <nav className="relative z-10 flex items-center justify-between px-8 py-5 max-w-7xl mx-auto">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
-            <Brain className="w-5 h-5 text-white" />
-          </div>
-          <span className="font-display font-bold text-xl text-white">PolicyAI</span>
-        </div>
-        <div className="hidden md:flex items-center gap-8 text-sm text-gray-400">
-          <a href="#features" className="hover:text-white transition-colors">How It Works</a>
-          <a href="#features" className="hover:text-white transition-colors">Features</a>
-          <a href="#stats" className="hover:text-white transition-colors">Benefits</a>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link to="/login" className="text-sm text-gray-400 hover:text-white transition-colors px-4 py-2">
-            Sign In
-          </Link>
-          <Link to="/signup" className="btn-primary text-sm px-5 py-2.5">
-            Get Started
-          </Link>
-        </div>
-      </nav>
-
+    <div className="w-full bg-slate-50 min-h-screen">
       {/* Hero Section */}
-      <section className="relative z-10 max-w-7xl mx-auto px-8 pt-20 pb-32 text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-500/10 border border-primary-500/20 mb-8">
-          <Zap className="w-3.5 h-3.5 text-primary-400" />
-          <span className="text-xs font-medium text-primary-400">AI-Powered Policy Simulation Engine</span>
+      <ShaderShowcase />
+
+      {/* Zoom Parallax Section */}
+      <section className="bg-slate-50 relative">
+        <div className="relative flex h-[30vh] items-center justify-center">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-1/2 left-1/2 h-[120vmin] w-[120vmin] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(6,182,212,0.1),transparent_50%)] blur-[30px]"
+          />
+          <h2 className="text-center text-3xl font-bold text-slate-900 tracking-tight">
+            See the Big Picture
+          </h2>
         </div>
+        <ZoomParallax images={parallaxImages} />
+      </section>
 
-        <h1 className="font-display text-5xl md:text-7xl font-bold mb-6 leading-tight">
-          <span className="gradient-text">Simulate Policy.</span>
-          <br />
-          <span className="text-white">Predict Reality.</span>
-        </h1>
+      {/* Features Section */}
+      <section id="features" className="py-24 px-6 md:px-16 bg-white border-t border-slate-100">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="text-sm font-bold text-cyan-600 tracking-widest uppercase mb-3">Comprehensive Analysis</h2>
+            <h3 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-6">
+              Everything you need to evaluate policy impact.
+            </h3>
+            <p className="text-lg text-slate-600 leading-relaxed">
+              Nexora uses advanced machine learning models trained on historical economic data to accurately simulate how changes in one sector cascade through the entire economy.
+            </p>
+          </div>
 
-        <p className="text-lg text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-          Test tax rates, subsidies, fuel pricing, and environmental regulations before implementation.
-          Our ML engine predicts economic and environmental impacts with{' '}
-          <span className="text-primary-400 font-semibold">94% accuracy</span>.
-        </p>
-
-        <div className="flex items-center justify-center gap-4 mb-16">
-          <Link to="/signup" className="btn-primary text-base px-8 py-4 flex items-center gap-2">
-            Start Simulating Free <ArrowRight className="w-4 h-4" />
-          </Link>
-          <Link to="/login" className="btn-secondary text-base px-8 py-4 flex items-center gap-2">
-            Sign In <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        {/* Preview Card */}
-        <div className="max-w-3xl mx-auto glass-card p-1">
-          <div className="bg-dark-300 rounded-xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm text-gray-400">Live Simulation Preview</span>
-              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-xs text-emerald-400 font-medium">Running</span>
-              </div>
-            </div>
-            <div className="grid grid-cols-4 gap-4 mb-4">
-              {[
-                { label: 'Tax Rate', value: '+18%', color: '#06b6d4' },
-                { label: 'Carbon Tax', value: '$45/ton', color: '#f59e0b' },
-                { label: 'EV Subsidy', value: '+25%', color: '#10b981' },
-                { label: 'Transport Sub.', value: '+15%', color: '#8b5cf6' },
-              ].map((item) => (
-                <div key={item.label} className="text-center">
-                  <p className="text-xs text-gray-500 mb-1">{item.label}</p>
-                  <p className="text-base font-bold" style={{ color: item.color }}>{item.value}</p>
-                </div>
-              ))}
-            </div>
-            <div className="border-t border-white/5 pt-4 grid grid-cols-3 gap-4">
-              {[
-                { label: 'GDP Δ', value: '+0.6%', color: '#10b981' },
-                { label: 'Inflation Δ', value: '+1.8%', color: '#ef4444' },
-                { label: 'Emissions Δ', value: '-12.4%', color: '#22c55e' },
-              ].map((item) => (
-                <div key={item.label} className="text-center">
-                  <p className="text-xs text-gray-500 mb-1">{item.label}</p>
-                  <p className="text-lg font-bold" style={{ color: item.color }}>{item.value}</p>
-                </div>
-              ))}
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <FeatureCard 
+              icon={TrendingUp}
+              title="GDP Growth Prediction"
+              description="Instantly forecast how changes in tax rates and public spending will affect national gross domestic product over time."
+              colorClass="bg-blue-500 shadow-blue-500/30"
+            />
+            <FeatureCard 
+              icon={Target}
+              title="Inflation Tracking"
+              description="Understand the delicate balance between economic stimulus and inflation. See how subsidies and interest rates move prices."
+              colorClass="bg-orange-500 shadow-orange-500/30"
+            />
+            <FeatureCard 
+              icon={Globe}
+              title="Environmental Scoring"
+              description="Calculate the exact ecological impact of industrial deregulation vs strict environmental policies."
+              colorClass="bg-emerald-500 shadow-emerald-500/30"
+            />
+            <FeatureCard 
+              icon={BarChart3}
+              title="Employment Rates"
+              description="Simulate job market reactions to fuel prices, interest rates, and government public spending initiatives."
+              colorClass="bg-cyan-500 shadow-cyan-500/30"
+            />
+            <FeatureCard 
+              icon={Shield}
+              title="Public Confidence"
+              description="Gauge public satisfaction and market confidence metrics derived from the aggregate effects of your policy choices."
+              colorClass="bg-violet-500 shadow-violet-500/30"
+            />
+            <FeatureCard 
+              icon={Zap}
+              title="Real-time Scenarios"
+              description="Save, load, and compare different legislative scenarios side-by-side to find the optimal path forward."
+              colorClass="bg-amber-500 shadow-amber-500/30"
+            />
           </div>
         </div>
       </section>
 
-      {/* Stats */}
-      <section id="stats" className="relative z-10 max-w-7xl mx-auto px-8 py-16">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          {[
-            { value: '47+', label: 'Economic Indicators' },
-            { value: '12', label: 'Policy Variables' },
-            { value: '94%', label: 'Prediction Accuracy' },
-            { value: '180+', label: 'Countries Covered' },
-          ].map((stat) => (
-            <div key={stat.label} className="text-center">
-              <p className="text-4xl font-display font-bold gradient-text mb-2">{stat.value}</p>
-              <p className="text-sm text-gray-400">{stat.label}</p>
-            </div>
-          ))}
+      {/* How it Works Section */}
+      <section id="how-it-works" className="py-24 px-6 md:px-16 bg-slate-50">
+        <div className="max-w-6xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-8">Ready to shape the future?</h2>
+          <p className="text-xl text-slate-600 mb-10 max-w-2xl mx-auto">
+            Join thousands of policy makers, economists, and researchers using AI to build a better tomorrow.
+          </p>
+          <a href="/signup" className="inline-block px-10 py-4 rounded-full bg-slate-900 text-white font-semibold text-lg transition-all shadow-lg hover:bg-slate-800 hover:-translate-y-1">
+            Create Free Account
+          </a>
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="relative z-10 max-w-7xl mx-auto px-8 py-24">
-        <h2 className="text-3xl font-display font-bold text-center mb-16">
-          <span className="text-white">Powered by </span>
-          <span className="gradient-text">Machine Learning</span>
-        </h2>
-        <div className="grid md:grid-cols-3 gap-6">
-          {[
-            {
-              icon: Cpu,
-              title: 'Random Forest ML',
-              desc: 'Advanced ensemble model trained on 5,000+ synthetic policy scenarios with cross-validated accuracy.',
-            },
-            {
-              icon: BarChart3,
-              title: 'Real-time Predictions',
-              desc: 'Instant GDP, inflation, employment, and environmental impact predictions as you adjust policy parameters.',
-            },
-            {
-              icon: Shield,
-              title: 'Risk Assessment',
-              desc: 'Automatic risk level evaluation identifies high-risk policies before implementation.',
-            },
-            {
-              icon: Globe,
-              title: 'Scenario Comparison',
-              desc: 'Compare multiple policy scenarios side-by-side to find the optimal policy configuration.',
-            },
-            {
-              icon: Zap,
-              title: 'Sensitivity Analysis',
-              desc: 'Understand which policy variables have the greatest impact on each economic indicator.',
-            },
-            {
-              icon: Brain,
-              title: 'Policy Recommendations',
-              desc: 'AI-powered recommendations suggest optimal policy adjustments for your desired outcomes.',
-            },
-          ].map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="glass-card-hover p-8 group">
-              <div className="w-12 h-12 rounded-xl bg-primary-500/10 flex items-center justify-center mb-4 group-hover:bg-primary-500/20 transition-colors">
-                <Icon className="w-6 h-6 text-primary-400" />
-              </div>
-              <h3 className="font-display font-semibold text-lg text-white mb-2">{title}</h3>
-              <p className="text-sm text-gray-400 leading-relaxed">{desc}</p>
-            </div>
-          ))}
+      {/* Simple Footer */}
+      <footer className="bg-white py-10 border-t border-slate-200">
+        <div className="max-w-6xl mx-auto px-6 text-center text-slate-500 text-sm">
+          <p>&copy; 2026 Nexora. Simulated impacts are predictions based on ML models.</p>
         </div>
-      </section>
-
-      {/* CTA */}
-      <section className="relative z-10 max-w-4xl mx-auto px-8 py-24 text-center">
-        <h2 className="text-4xl font-display font-bold mb-4">
-          <span className="text-white">Ready to Test Your</span>
-          <br />
-          <span className="gradient-text">Policy Ideas?</span>
-        </h2>
-        <p className="text-gray-400 mb-8">
-          Join thousands of policymakers and economists using AI to design better public policies.
-        </p>
-        <Link to="/signup" className="btn-primary text-base px-10 py-4 inline-flex items-center gap-2 mx-auto">
-          Create Free Account <ArrowRight className="w-4 h-4" />
-        </Link>
-        <p className="text-xs text-gray-500 mt-4">Free to use. No credit card required.</p>
-      </section>
-
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-white/5 py-8 text-center text-xs text-gray-500">
-        © 2026 PolicyAI. AI Public Policy Impact Simulator.
       </footer>
     </div>
   )

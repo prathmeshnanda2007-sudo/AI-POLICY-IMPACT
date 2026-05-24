@@ -1,0 +1,65 @@
+{
+  "score": 93,
+  "total": 44,
+  "passed": 41,
+  "failed": 2,
+  "warnings": 1,
+  "failures": [
+    {
+      "name": "Protected route without token returns 403",
+      "error": "Expected 403, got 401"
+    },
+    {
+      "name": "Train model via API",
+      "error": "Train: 500 \u2014 {\"detail\":\"'charmap' codec can't encode character '\\\\U0001f4ca' in position 0: character maps to <undefined>\"}"
+    }
+  ],
+  "warnings_list": [
+    {
+      "name": "Rate Limiting",
+      "msg": "No rate limiting detected \u2014 consider adding slowapi for production"
+    }
+  ],
+  "predictions": {
+    "Balanced Policy (baseline)": {
+      "gdp_growth": 2.283499414538243,
+      "inflation": 4.034522232947712,
+      "employment_rate": 93.66168247378388,
+      "environment_score": 51.17845083666737,
+      "public_satisfaction": 61.79980726258693,
+      "confidence": 0.9521104600256989
+    },
+    "High Tax / Green Focus": {
+      "gdp_growth": 2.3980578216540964,
+      "inflation": 5.405923589007115,
+      "employment_rate": 96.41142098601564,
+      "environment_score": 71.11427319936804,
+      "public_satisfaction": 69.96071076426648,
+      "confidence": 0.8830442189912387
+    },
+    "Low Tax / Business Stimulus": {
+      "gdp_growth": 2.380135218492719,
+      "inflation": 3.149342106818539,
+      "employment_rate": 91.95428960733759,
+      "environment_score": 34.48229265208529,
+      "public_satisfaction": 55.76227803823684,
+      "confidence": 0.9113990352813646
+    },
+    "Austerity / High Interest": {
+      "gdp_growth": -0.32404356669302015,
+      "inflation": 2.7860734370470457,
+      "employment_rate": 88.57510842819026,
+      "environment_score": 42.317926211637925,
+      "public_satisfaction": 46.548417788043636,
+      "confidence": 0.9077987197598429
+    },
+    "Max Stimulus": {
+      "gdp_growth": 5.797358036763466,
+      "inflation": 5.845740321728087,
+      "employment_rate": 101.93070334855582,
+      "environment_score": 72.83137693359446,
+      "public_satisfaction": 87.88385797180857,
+      "confidence": 0.8293893561933156
+    }
+  }
+}

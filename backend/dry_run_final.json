@@ -1,0 +1,104 @@
+{
+  "timestamp": "2026-04-19T00:14:00.744931",
+  "passed": 16,
+  "failed": 0,
+  "status": "ALL SYSTEMS GO - PRODUCTION READY",
+  "tests": [
+    {
+      "name": "DB Init",
+      "status": "PASS",
+      "ms": 186.5,
+      "detail": "DB initialized"
+    },
+    {
+      "name": "Create User + Lookup",
+      "status": "PASS",
+      "ms": 23.6,
+      "detail": "user_id=16, email=dryrun_3296@test.com"
+    },
+    {
+      "name": "Save + Fetch Scenario",
+      "status": "PASS",
+      "ms": 15.5,
+      "detail": "scenario_id=30, total=18"
+    },
+    {
+      "name": "Save + Fetch Simulation History",
+      "status": "PASS",
+      "ms": 14.3,
+      "detail": "sim_id=55, history_count=10"
+    },
+    {
+      "name": "Password Hash & Verify",
+      "status": "PASS",
+      "ms": 1702.7,
+      "detail": "hash=e3f143cffe56928969e419f82da128..."
+    },
+    {
+      "name": "JWT Create & Decode",
+      "status": "PASS",
+      "ms": 0.1,
+      "detail": "token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ..."
+    },
+    {
+      "name": "JWT Expiry Rejection",
+      "status": "PASS",
+      "ms": 0.0,
+      "detail": "Expired token correctly rejected"
+    },
+    {
+      "name": "Generate Synthetic Data (500 samples)",
+      "status": "PASS",
+      "ms": 18785.8,
+      "detail": "X.shape=(500, 6), y.shape=(500, 5)"
+    },
+    {
+      "name": "Train & Select Best Model (5000 samples)",
+      "status": "PASS",
+      "ms": 15497.7,
+      "detail": "Best=LinearRegression | R2=0.9510 | RMSE=1.1494"
+    },
+    {
+      "name": "Load Saved Model",
+      "status": "PASS",
+      "ms": 47.0,
+      "detail": "Loaded LinearRegression from disk"
+    },
+    {
+      "name": "Training Data Predictions (5 scenarios)",
+      "status": "PASS",
+      "ms": 14.4,
+      "detail": "5 scenarios predicted successfully"
+    },
+    {
+      "name": "Testing Data Predictions (5 scenarios)",
+      "status": "PASS",
+      "ms": 21.9,
+      "detail": "5 scenarios predicted successfully"
+    },
+    {
+      "name": "Feature Importance",
+      "status": "PASS",
+      "ms": 0.8,
+      "detail": "Top feature: environmental_regulation (importance=0.4864)"
+    },
+    {
+      "name": "Sensitivity Analysis (GDP)",
+      "status": "PASS",
+      "ms": 26.6,
+      "detail": "Most sensitive: tax_rate (impact=-0.1494)"
+    },
+    {
+      "name": "Policy Recommendation (Optimization)",
+      "status": "PASS",
+      "ms": 2720.5,
+      "detail": "Recommended tax_rate=49.7%, fuel=1.7"
+    },
+    {
+      "name": "Full E2E Flow (Register -> Auth -> Predict -> Save -> History)",
+      "status": "PASS",
+      "ms": 76.1,
+      "detail": "user_id=17, sim_id=56, scenario_id=31, gdp=2.20%"
+    }
+  ]
+}
