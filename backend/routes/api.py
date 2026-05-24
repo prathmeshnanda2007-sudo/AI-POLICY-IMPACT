@@ -147,15 +147,15 @@ async def feature_importance():
 
 @router.get("/scenarios")
 async def list_scenarios(current_user: dict = Depends(get_current_user)):
-    """List all saved scenarios."""
-    return get_all_scenarios()
+    """List all saved scenarios for the current user."""
+    return get_all_scenarios(current_user['id'])
 
 
 @router.post("/scenarios")
 async def create_scenario(scenario: ScenarioCreate, current_user: dict = Depends(get_current_user)):
-    """Save a new scenario."""
+    """Save a new scenario for the current user."""
     try:
-        saved = save_scenario(scenario.name, scenario.inputs, scenario.results)
+        saved = save_scenario(scenario.name, scenario.inputs, scenario.results, current_user['id'])
         return saved
     except Exception as e:
         logger.error(f"Save scenario error: {e}")
@@ -175,8 +175,8 @@ async def remove_scenario(scenario_id: int, current_user: dict = Depends(get_cur
 
 @router.get("/history")
 async def history(current_user: dict = Depends(get_current_user)):
-    """Get simulation history."""
-    return db_get_history(50)
+    """Get simulation history for the current user."""
+    return db_get_history(50, current_user['id'])
 
 
 # --- Advanced ML ---

@@ -88,25 +88,29 @@ def get_db():
 
 # --- Scenarios CRUD ---
 
-def save_scenario(name: str, inputs: dict, results: dict) -> dict:
+def save_scenario(name: str, inputs: dict, results: dict, user_id: int = None) -> dict:
     db = SessionLocal()
     scenario = Scenario(
         name=name,
         inputs=json.dumps(inputs),
-        results=json.dumps(results)
+        results=json.dumps(results),
+        user_id=user_id
     )
     db.add(scenario)
     db.commit()
     db.refresh(scenario)
-    result = {'id': scenario.id, 'name': scenario.name, 'inputs': inputs, 'results': results}
+    result = {'id': scenario.id, 'name': scenario.name, 'inputs': inputs, 'results': results, 'user_id': user_id}
     db.close()
     return result
 
 
-def get_all_scenarios() -> list:
+def get_all_scenarios(user_id: int = None) -> list:
     db = SessionLocal()
     try:
-        rows = db.query(Scenario).order_by(Scenario.created_at.desc()).all()
+        query = db.query(Scenario)
+        if user_id:
+            query = query.filter(Scenario.user_id == user_id)
+        rows = query.order_by(Scenario.created_at.desc()).all()
         return [
             {
                 'id': row.id,
@@ -135,25 +139,30 @@ def delete_scenario(scenario_id: int) -> bool:
 
 # --- Simulation History ---
 
-def save_simulation(inputs: dict, results: dict, model_type: str = None, confidence: float = None):
+def save_simulation(inputs: dict, results: dict, model_type: str = None, confidence: float = None, user_id: int = None):
     db = SessionLocal()
     sim = SimulationHistory(
         inputs=json.dumps(inputs),
         results=json.dumps(results),
         model_type=model_type,
-        confidence=confidence
+        confidence=confidence,
+        user_id=user_id
     )
     db.add(sim)
     db.commit()
     db.refresh(sim)
+    sim_id = sim.id
     db.close()
-    return sim.id
+    return sim_id
 
 
-def get_history(limit: int = 50) -> list:
+def get_history(limit: int = 50, user_id: int = None) -> list:
     db = SessionLocal()
     try:
-        rows = db.query(SimulationHistory).order_by(SimulationHistory.created_at.desc()).limit(limit).all()
+        query = db.query(SimulationHistory)
+        if user_id:
+            query = query.filter(SimulationHistory.user_id == user_id)
+        rows = query.order_by(SimulationHistory.created_at.desc()).limit(limit).all()
         return [
             {
                 'id': row.id,
