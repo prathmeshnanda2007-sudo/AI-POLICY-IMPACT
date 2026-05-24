@@ -1,1 +1,9 @@
-node_modules
+node_modules/
+.env
+dist/
+build/
+backend/__pycache__/
+backend/.venv/
+backend/data/*.db
+*.pyc
+*.sqlite3
