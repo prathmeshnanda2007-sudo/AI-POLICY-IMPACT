@@ -33,7 +33,8 @@ export function useSimulation() {
       const ws = new WebSocket(wsUrl)
       
       ws.onopen = () => {
-        ws.send(JSON.stringify(inputs))
+        const token = localStorage.getItem('policyai_token')
+        ws.send(JSON.stringify({ ...inputs, token }))
       }
       
       ws.onmessage = (event) => {

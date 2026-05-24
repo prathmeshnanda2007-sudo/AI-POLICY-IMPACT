@@ -5,6 +5,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from models.ml_model import predict_policy, load_model
 from services.database import save_simulation
+from services.auth import decode_token
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -22,6 +23,13 @@ async def websocket_simulate(websocket: WebSocket):
             # Receive input parameters from frontend
             data = await websocket.receive_text()
             inputs = json.loads(data)
+            token = inputs.pop('token', None)
+            
+            user_id = None
+            if token:
+                payload = decode_token(token)
+                if payload and 'sub' in payload:
+                    user_id = int(payload['sub'])
             
             # 1. Stream "Analyzing data..."
             await websocket.send_json({"status": "processing", "step": "Ingesting policy parameters..."})
@@ -55,7 +63,8 @@ async def websocket_simulate(websocket: WebSocket):
                     inputs=inputs,
                     results=result,
                     model_type=metadata.get('model_type', 'RandomForest'),
-                    confidence=result.get('confidence')
+                    confidence=result.get('confidence'),
+                    user_id=user_id
                 )
             except Exception as e:
                 logger.error(f"Failed to save via WS: {e}")
