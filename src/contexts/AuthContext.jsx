@@ -9,7 +9,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  // Set/remove auth header whenever token changes
+  // Sync token state changes (mostly for cleanup on logout/verify fail)
   useEffect(() => {
     if (token) {
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`
@@ -45,7 +45,10 @@ export function AuthProvider({ children }) {
     setError(null)
     try {
       const res = await api.post('/auth/register', { email, password, name })
-      setToken(res.data.token)
+      const newToken = res.data.token
+      localStorage.setItem('policyai_token', newToken)
+      api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`
+      setToken(newToken)
       setUser(res.data.user)
       return res.data
     } catch (err) {
@@ -59,7 +62,10 @@ export function AuthProvider({ children }) {
     setError(null)
     try {
       const res = await api.post('/auth/login', { email, password })
-      setToken(res.data.token)
+      const newToken = res.data.token
+      localStorage.setItem('policyai_token', newToken)
+      api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`
+      setToken(newToken)
       setUser(res.data.user)
       return res.data
     } catch (err) {
@@ -73,7 +79,10 @@ export function AuthProvider({ children }) {
     setError(null)
     try {
       const res = await api.post('/auth/google', { credential })
-      setToken(res.data.token)
+      const newToken = res.data.token
+      localStorage.setItem('policyai_token', newToken)
+      api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`
+      setToken(newToken)
       setUser(res.data.user)
       return res.data
     } catch (err) {
