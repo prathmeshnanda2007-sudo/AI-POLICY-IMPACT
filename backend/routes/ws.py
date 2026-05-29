@@ -11,9 +11,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 try:
-    model, scaler, metadata = load_model()
+    model, _, metadata = load_model()
 except Exception as e:
-    model, scaler, metadata = None, None, {}
+    model, metadata = None, {}
 
 @router.websocket("/ws/simulate")
 async def websocket_simulate(websocket: WebSocket):
@@ -40,8 +40,8 @@ async def websocket_simulate(websocket: WebSocket):
             await asyncio.sleep(0.4)
             
             # 3. Predict actual results
-            if model and scaler:
-                result = predict_policy(inputs, model, scaler)
+            if model:
+                result = predict_policy(inputs, model)
             else:
                 # Fallback if model not loaded
                 result = {

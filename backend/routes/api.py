@@ -21,22 +21,21 @@ router = APIRouter()
 
 # Load model on startup (trains if not found)
 try:
-    model, scaler, metadata = load_model()
+    model, _, metadata = load_model()
 except Exception as _load_err:
     import logging as _log
     _log.getLogger(__name__).error(f"Model load failed at import: {_load_err}. Will retry on first request.")
-    model, scaler, metadata = None, None, {}
+    model, metadata = None, {}
 
 
 # --- Request Schemas ---
 
 class PolicyInput(BaseModel):
-    tax_rate: float = Field(ge=0, le=60, default=25)
-    fuel_price: float = Field(ge=1, le=10, default=3.5)
-    subsidy: float = Field(ge=0, le=50, default=15)
-    public_spending: float = Field(ge=10, le=60, default=30)
-    interest_rate: float = Field(ge=0, le=20, default=5)
-    environmental_regulation: float = Field(ge=0, le=100, default=50)
+    Inflation_CPI: float = Field(ge=0, le=20, default=5)
+    Tax_Revenue_Pct_GDP: float = Field(ge=5, le=30, default=15)
+    Unemployment_Pct: float = Field(ge=2, le=20, default=7)
+    CO2_Emissions: float = Field(ge=100000, le=5000000, default=2500000)
+    FDI_Net_Inflows_Pct_GDP: float = Field(ge=-2, le=10, default=2)
 
 
 class CompareRequest(BaseModel):
@@ -56,10 +55,6 @@ class SensitivityRequest(BaseModel):
 
 class RecommendRequest(BaseModel):
     gdp_growth: Optional[float] = 4.0
-    inflation: Optional[float] = 2.5
-    employment_rate: Optional[float] = 96.0
-    environment_score: Optional[float] = 80.0
-    public_satisfaction: Optional[float] = 75.0
 
 
 # --- Prediction Endpoints ---
@@ -67,15 +62,15 @@ class RecommendRequest(BaseModel):
 @router.post("/predict")
 async def predict(inputs: PolicyInput, current_user: dict = Depends(get_current_user)):
     """Run policy simulation and return predicted outcomes."""
-    global model, scaler, metadata
+    global model, metadata
     try:
         # Lazy load: train if model wasn't available at startup
-        if model is None or scaler is None:
+        if model is None:
             logger.info("Model not loaded, training now...")
-            model, scaler, metadata = train_and_select_best()
+            model, _, metadata = train_and_select_best()
 
         input_dict = inputs.model_dump()
-        result = predict_policy(input_dict, model, scaler)
+        result = predict_policy(input_dict, model)
 
         # Save to database
         save_simulation(
@@ -85,7 +80,7 @@ async def predict(inputs: PolicyInput, current_user: dict = Depends(get_current_
             confidence=result.get('confidence')
         )
 
-        logger.info(f"Prediction: GDP={result['gdp_growth']:.2f}, Inflation={result['inflation']:.2f}")
+        logger.info(f"Prediction: GDP={result['gdp_growth']:.2f}")
         return result
     except Exception as e:
         logger.error(f"Prediction error: {e}")
@@ -98,7 +93,7 @@ async def compare(request: CompareRequest, current_user: dict = Depends(get_curr
     try:
         results = []
         for scenario_inputs in request.scenarios:
-            result = predict_policy(scenario_inputs, model, scaler)
+            result = predict_policy(scenario_inputs, model)
             results.append(result)
         return results
     except Exception as e:
@@ -109,9 +104,9 @@ async def compare(request: CompareRequest, current_user: dict = Depends(get_curr
 @router.post("/train")
 async def train(current_user: dict = Depends(get_current_user)):
     """Retrain the ML model with fresh synthetic data."""
-    global model, scaler, metadata
+    global model, metadata
     try:
-        model, scaler, metadata = train_and_select_best()
+        model, _, metadata = train_and_select_best()
         log_training(
             model_type=metadata['model_type'],
             rmse=metadata['rmse'],
@@ -186,8 +181,9 @@ async def run_sensitivity(request: SensitivityRequest, current_user: dict = Depe
     """Run sensitivity analysis on policy inputs."""
     try:
         base = request.inputs or {
-            'tax_rate': 25, 'fuel_price': 3.5, 'subsidy': 15,
-            'public_spending': 30, 'interest_rate': 5, 'environmental_regulation': 50
+            'Inflation_CPI': 5.0, 'Tax_Revenue_Pct_GDP': 15.0, 
+            'Unemployment_Pct': 7.0, 'CO2_Emissions': 2500000.0, 
+            'FDI_Net_Inflows_Pct_GDP': 2.0
         }
         result = sensitivity_analysis(base, request.target_variable)
         return result

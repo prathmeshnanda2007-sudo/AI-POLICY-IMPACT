@@ -6,7 +6,7 @@ import jsPDF from 'jspdf'
 import PolicySlider from '../components/PolicySlider'
 import ResultCard from '../components/ResultCard'
 import LoadingOverlay from '../components/LoadingOverlay'
-import { GDPChart, InflationChart, EmploymentChart, EnvironmentGauge, FeatureImportanceChart } from '../components/Charts'
+import { GDPChart, FeatureImportanceChart, EmploymentChart, EnvironmentGauge } from '../components/Charts'
 import { useSimulation } from '../hooks/useSimulation'
 import { POLICY_CONFIG, OUTPUT_CONFIG, getRiskLevel } from '../utils/constants'
 import { getFeatureImportance, getSensitivity } from '../services/api'
@@ -221,11 +221,8 @@ export default function Simulator() {
               ))}
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-6">
+            <div className="grid lg:grid-cols-1 gap-6">
               <GDPChart data={generateChartData('gdp_growth', results.gdp_growth)} />
-              <InflationChart data={generateChartData('inflation', results.inflation)} />
-            </div>
-            <div className="grid lg:grid-cols-2 gap-6">
               <EmploymentChart data={generateChartData('employment_rate', results.employment_rate)} />
               <EnvironmentGauge score={results.environment_score} />
             </div>

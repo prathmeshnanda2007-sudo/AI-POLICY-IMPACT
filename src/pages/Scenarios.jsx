@@ -67,16 +67,20 @@ export default function Scenarios() {
     try {
       const scenarios = compareList.map(s => s.inputs)
       const data = await comparePolicy(scenarios)
+      
+      // Ensure unique names for Recharts series
+      const safeMetrics = compareList.map((s, i) => s.name ? `${s.name} (#${s.id})` : `Scenario ${i + 1}`)
+
       const chartData = Object.keys(OUTPUT_CONFIG).map(metric => {
         const row = { name: OUTPUT_CONFIG[metric].label }
         data.forEach((result, i) => {
-          row[compareList[i].name || `Scenario ${i + 1}`] = result[metric]
+          row[safeMetrics[i]] = result[metric]
         })
         return row
       })
       setComparisonResults({
         data: chartData,
-        metrics: compareList.map(s => s.name || `Scenario`),
+        metrics: safeMetrics,
         raw: data,
       })
     } catch (err) {
@@ -267,8 +271,9 @@ export default function Scenarios() {
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
-                    {['gdp_growth', 'inflation', 'environment_score'].map((key) => {
+                    {Object.keys(OUTPUT_CONFIG).map((key) => {
                       const config = OUTPUT_CONFIG[key]
+                      if (!config) return null;
                       return (
                         <div key={key} className="text-center">
                           <p className="text-[10px] text-gray-500">{config.label}</p>

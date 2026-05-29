@@ -69,6 +69,20 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
+  const googleLogin = useCallback(async (credential) => {
+    setError(null)
+    try {
+      const res = await api.post('/auth/google', { credential })
+      setToken(res.data.token)
+      setUser(res.data.user)
+      return res.data
+    } catch (err) {
+      const msg = err.response?.data?.detail || err.message || 'Google Login failed'
+      setError(msg)
+      throw new Error(msg)
+    }
+  }, [])
+
   const logout = useCallback(() => {
     setToken(null)
     setUser(null)
@@ -87,6 +101,7 @@ export function AuthProvider({ children }) {
     isAuthenticated,
     register,
     login,
+    googleLogin,
     logout,
     setError,
   }

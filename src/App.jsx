@@ -12,6 +12,27 @@ import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 
+function BackgroundManager() {
+  const { isAuthenticated } = useAuth()
+  
+  if (isAuthenticated) {
+    // Solid background for authenticated pages for better data visualization
+    return <div className="fixed inset-0 w-full h-full bg-[#070b14] z-0" />
+  }
+
+  // Live video background for landing and auth pages
+  return (
+    <video
+      autoPlay
+      loop
+      muted
+      playsInline
+      className="fixed inset-0 w-full h-full object-cover z-0"
+      src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260403_050628_c4e32401-fab4-4a27-b7a8-6e9291cd5959.mp4"
+    />
+  )
+}
+
 // ── Loading screen shown while JWT is being verified on startup
 function LoadingScreen() {
   return (
@@ -66,6 +87,7 @@ function AppRoutes() {
       <Routes location={location} key={location.pathname}>
         {/* ── Root: Landing (guest) OR Dashboard (authenticated) */}
         <Route path="/" element={<RootRoute logout={logout} />} />
+        <Route path="/landing" element={<PublicRoute><Landing /></PublicRoute>} />
 
       {/* ── Auth pages (redirect to /dashboard if already logged in) */}
       <Route path="/login"  element={<PublicRoute><Login /></PublicRoute>} />
@@ -104,7 +126,12 @@ export default function App() {
   return (
     <Router>
       <AuthProvider>
-        <AppRoutes />
+        <div className="relative min-h-screen w-full font-sans bg-black">
+          <BackgroundManager />
+          <div className="relative z-10 min-h-screen w-full flex flex-col">
+            <AppRoutes />
+          </div>
+        </div>
       </AuthProvider>
     </Router>
   )

@@ -95,8 +95,8 @@ export default function Results() {
                     {item.timestamp ? new Date(item.timestamp).toLocaleDateString() : '—'}
                   </span>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {['gdp_growth', 'inflation', 'employment_rate'].map((key) => {
+                <div className="grid grid-cols-1 gap-2">
+                  {['gdp_growth'].map((key) => {
                     const config = OUTPUT_CONFIG[key]
                     return (
                       <div key={key} className="text-center">
@@ -155,8 +155,10 @@ export default function Results() {
                 </div>
               </div>
 
-              <GDPChart data={generateChartData(selected.results)} />
-              <InflationChart data={generateChartData(selected.results)} />
+              <div className="space-y-6">
+                <GDPChart data={generateChartData(selected.results)} />
+                <InflationChart data={generateChartData(selected.results)} />
+              </div>
             </>
           ) : (
             <div className="glass-card p-16 text-center">

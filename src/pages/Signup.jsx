@@ -3,10 +3,11 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Brain, Mail, Lock, User, Eye, EyeOff, ArrowRight, AlertCircle, Loader2, CheckCircle } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { MeshGradient } from "@paper-design/shaders-react"
+import { GoogleLogin } from '@react-oauth/google'
 
 export default function Signup() {
   const navigate = useNavigate()
-  const { register } = useAuth()
+  const { register, googleLogin } = useAuth()
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -51,6 +52,19 @@ export default function Signup() {
     setLoading(true)
     try {
       await register(form.email, form.password, form.name.trim())
+      navigate('/dashboard', { replace: true })
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setLoading(true)
+    setError(null)
+    try {
+      await googleLogin(credentialResponse.credential)
       navigate('/dashboard', { replace: true })
     } catch (err) {
       setError(err.message)
@@ -231,6 +245,25 @@ export default function Signup() {
               )}
             </button>
           </form>
+
+          {/* Divider */}
+          <div className="flex items-center gap-4 my-6">
+            <div className="flex-1 border-t border-slate-200" />
+            <span className="text-xs text-slate-500 uppercase font-medium tracking-wider">Or</span>
+            <div className="flex-1 border-t border-slate-200" />
+          </div>
+
+          <div className="flex justify-center w-full mb-6">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError('Google login failed')}
+              useOneTap
+              shape="pill"
+              theme="outline"
+              size="large"
+              width="100%"
+            />
+          </div>
 
           {/* Divider */}
           <div className="flex items-center gap-4 my-6">

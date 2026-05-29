@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-04-16 22:35:54",
-  "total": 61,
-  "passed": 60,
-  "failed": 0,
-  "warnings": 1,
-  "pass_rate": "98.4%",
+  "timestamp": "2026-05-28 23:40:11",
+  "total": 56,
+  "passed": 37,
+  "failed": 19,
+  "warnings": 0,
+  "pass_rate": "66.1%",
   "results": [
     {
       "name": "ML module imports",
@@ -12,99 +12,99 @@
       "detail": ""
     },
     {
-      "name": "Synthetic data generation (5000 samples)",
-      "status": "PASS",
-      "detail": "X=(5000, 6), y=(5000, 5)"
+      "name": "Synthetic data generation",
+      "status": "FAIL",
+      "detail": "name 'generate_synthetic_data' is not defined"
     },
     {
       "name": "Feature range validation",
-      "status": "PASS",
-      "detail": "All 6 features within expected bounds"
+      "status": "FAIL",
+      "detail": "name 'X' is not defined"
     },
     {
-      "name": "Model training (3 algorithms compared)",
-      "status": "PASS",
-      "detail": "Best=LinearRegression, R\u00b2=0.9510, RMSE=1.1494"
+      "name": "Model training",
+      "status": "FAIL",
+      "detail": ""
     },
     {
-      "name": "Model persistence (model.pkl, scaler.pkl, metadata.json)",
-      "status": "PASS",
-      "detail": "model.pkl=1888 bytes"
+      "name": "Model persistence",
+      "status": "FAIL",
+      "detail": "model_metadata.json not found at C:\\Users\\priya\\AI-POLICY-IMPACT\\backend\\model_metadata.json"
     },
     {
-      "name": "Model loading from disk",
-      "status": "PASS",
-      "detail": "Type=LinearRegression"
+      "name": "Model loading",
+      "status": "FAIL",
+      "detail": ""
     },
     {
       "name": "Training scenario: Default Baseline",
-      "status": "PASS",
-      "detail": "Conf=0.95 | gdp_growth=2.28, inflation=4.03, employment_rate=93.66, environment_score=51.18, public_satisfaction=61.80"
+      "status": "FAIL",
+      "detail": "name 'OUTPUT_NAMES' is not defined"
     },
     {
       "name": "Training scenario: High Tax + Strong Regulation",
-      "status": "PASS",
-      "detail": "Conf=0.90 | gdp_growth=-0.51, inflation=4.51, employment_rate=90.94, environment_score=65.74, public_satisfaction=53.46"
+      "status": "FAIL",
+      "detail": "name 'OUTPUT_NAMES' is not defined"
     },
     {
       "name": "Training scenario: Low Tax Pro-Business",
-      "status": "PASS",
-      "detail": "Conf=0.87 | gdp_growth=5.01, inflation=4.27, employment_rate=97.08, environment_score=39.00, public_satisfaction=68.88"
+      "status": "FAIL",
+      "detail": "name 'OUTPUT_NAMES' is not defined"
     },
     {
       "name": "Training scenario: Balanced Growth",
-      "status": "PASS",
-      "detail": "Conf=0.94 | gdp_growth=3.25, inflation=4.50, employment_rate=95.92, environment_score=56.84, public_satisfaction=68.79"
+      "status": "FAIL",
+      "detail": "name 'OUTPUT_NAMES' is not defined"
     },
     {
       "name": "Test scenario: Minimum All Inputs",
-      "status": "PASS",
-      "detail": "Conf=0.83 | gdp_growth=3.22, inflation=2.71, employment_rate=92.31, environment_score=31.12, public_satisfaction=58.69"
+      "status": "FAIL",
+      "detail": "name 'OUTPUT_NAMES' is not defined"
     },
     {
       "name": "Test scenario: Maximum All Inputs",
-      "status": "PASS",
-      "detail": "Conf=0.83 | gdp_growth=0.83, inflation=6.08, employment_rate=95.02, environment_score=69.07, public_satisfaction=60.51"
+      "status": "FAIL",
+      "detail": "name 'OUTPUT_NAMES' is not defined"
     },
     {
       "name": "Test scenario: Zero Subsidy Austerity",
-      "status": "PASS",
-      "detail": "Conf=0.87 | gdp_growth=-0.79, inflation=2.63, employment_rate=86.79, environment_score=29.65, public_satisfaction=38.63"
+      "status": "FAIL",
+      "detail": "name 'OUTPUT_NAMES' is not defined"
     },
     {
       "name": "Test scenario: Maximum Stimulus",
-      "status": "PASS",
-      "detail": "Conf=0.84 | gdp_growth=6.40, inflation=5.85, employment_rate=100.75, environment_score=45.91, public_satisfaction=78.68"
+      "status": "FAIL",
+      "detail": "name 'OUTPUT_NAMES' is not defined"
     },
     {
       "name": "Test scenario: Eco-Extreme Policy",
-      "status": "PASS",
-      "detail": "Conf=0.91 | gdp_growth=2.25, inflation=5.74, employment_rate=95.70, environment_score=68.23, public_satisfaction=64.47"
+      "status": "FAIL",
+      "detail": "name 'OUTPUT_NAMES' is not defined"
     },
     {
       "name": "Test scenario: Boundary Mix",
-      "status": "PASS",
-      "detail": "Conf=0.79 | gdp_growth=4.41, inflation=4.53, employment_rate=100.49, environment_score=74.72, public_satisfaction=89.24"
+      "status": "FAIL",
+      "detail": "name 'OUTPUT_NAMES' is not defined"
     },
     {
       "name": "Feature importance retrieval",
       "status": "PASS",
-      "detail": "6 features: ['environmental_regulation', 'subsidy', 'tax_rate']..."
+      "detail": "5 features: ['Tax_Revenue_Pct_GDP', 'Inflation_CPI', 'FDI_Net_Inflows_Pct_GDP']..."
     },
     {
-      "name": "Sensitivity analysis (gdp_growth)",
-      "status": "PASS",
-      "detail": "Top impact: tax_rate \u2192 -0.1494"
+      "name": "Sensitivity analysis",
+      "status": "FAIL",
+      "detail": "Expected 6 sensitivity results, got 5"
     },
     {
       "name": "Sensitivity analysis (inflation)",
-      "status": "PASS",
-      "detail": "Top: public_spending \u2192 0.1210"
+      "status": "FAIL",
+      "detail": ""
     },
     {
       "name": "Policy recommendation engine",
       "status": "PASS",
-      "detail": "Opt score=62.91 | tax=28.1%, subsidy=44.2%"
+      "detail": "Opt score=4794.96 | tax=10.6%, subsidy=19.5%"
     },
     {
       "name": "Database module imports",
@@ -112,19 +112,19 @@
       "detail": ""
     },
     {
-      "name": "Database file exists",
+      "name": "Database initialized",
       "status": "PASS",
-      "detail": "Size=57344 bytes at C:\\Users\\priya\\AI-POLICY-IMPACT\\backend\\services\\..\\data\\policy_simulator.db"
+      "detail": "Connected and initialized via SQLAlchemy"
     },
     {
       "name": "Database tables",
       "status": "PASS",
-      "detail": "Tables: ['scenarios', 'sqlite_sequence', 'simulation_history', 'model_training_log', 'users']"
+      "detail": "Tables: ['model_training_log', 'users', 'scenarios', 'simulation_history']"
     },
     {
       "name": "User creation",
       "status": "PASS",
-      "detail": "ID=14, email=dryrun_1776359153@test.com"
+      "detail": "ID=11, email=dryrun_1779991803@test.com"
     },
     {
       "name": "Duplicate email rejection",
@@ -149,27 +149,27 @@
     {
       "name": "Save scenario",
       "status": "PASS",
-      "detail": "ID=24"
+      "detail": "ID=6"
     },
     {
       "name": "Get all scenarios",
       "status": "PASS",
-      "detail": "13 scenarios found"
+      "detail": "1 scenarios found"
     },
     {
       "name": "Delete scenario",
       "status": "PASS",
-      "detail": "Deleted ID=24"
+      "detail": "Deleted ID=6"
     },
     {
       "name": "Save simulation history",
       "status": "PASS",
-      "detail": "Sim ID=46"
+      "detail": "Sim ID=6"
     },
     {
       "name": "Get simulation history",
       "status": "PASS",
-      "detail": "10 entries"
+      "detail": "6 entries"
     },
     {
       "name": "Log training event",
@@ -199,7 +199,7 @@
     {
       "name": "JWT token decoding",
       "status": "PASS",
-      "detail": "sub=1, exp=1776618354"
+      "detail": "sub=1, exp=1780251011"
     },
     {
       "name": "Invalid/tampered token rejection",
@@ -228,8 +228,8 @@
     },
     {
       "name": "Pydantic request schemas",
-      "status": "PASS",
-      "detail": "PolicyInput defaults: tax=25, fuel=3.5"
+      "status": "FAIL",
+      "detail": ""
     },
     {
       "name": "Auth route schemas",
@@ -267,34 +267,9 @@
       "detail": ""
     },
     {
-      "name": "Overall test set accuracy",
-      "status": "PASS",
-      "detail": "RMSE=1.1494, R\u00b2=0.9510"
-    },
-    {
-      "name": "  Per-output R\u00b2 \u2014 gdp_growth",
-      "status": "PASS",
-      "detail": "R\u00b2=0.9454"
-    },
-    {
-      "name": "  Per-output R\u00b2 \u2014 inflation",
-      "status": "PASS",
-      "detail": "R\u00b2=0.9213"
-    },
-    {
-      "name": "  Per-output R\u00b2 \u2014 employment_rate",
-      "status": "PASS",
-      "detail": "R\u00b2=0.9548"
-    },
-    {
-      "name": "  Per-output R\u00b2 \u2014 environment_score",
-      "status": "PASS",
-      "detail": "R\u00b2=0.9711"
-    },
-    {
-      "name": "  Per-output R\u00b2 \u2014 public_satisfaction",
-      "status": "PASS",
-      "detail": "R\u00b2=0.9624"
+      "name": "Cross-validation check",
+      "status": "FAIL",
+      "detail": "name 'generate_synthetic_data' is not defined"
     },
     {
       "name": "Production build (dist/)",
@@ -308,8 +283,8 @@
     },
     {
       "name": "Backend requirements.txt",
-      "status": "WARN",
-      "detail": "Missing: ['uvicorn']"
+      "status": "PASS",
+      "detail": "All 7 core deps listed"
     }
   ]
 }

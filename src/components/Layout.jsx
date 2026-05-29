@@ -24,9 +24,9 @@ export default function Layout({ children, onLogout }) {
     : '?'
 
   return (
-    <div className="flex h-screen overflow-hidden bg-dark-500">
-      {/* Sidebar */}
-      <aside className={`${collapsed ? 'w-20' : 'w-72'} flex-shrink-0 bg-dark-400 border-r border-white/5 flex flex-col transition-all duration-300`}>
+    <div className="flex h-screen overflow-hidden bg-transparent">
+      {/* Sidebar (Desktop) */}
+      <aside className={`hidden md:flex ${collapsed ? 'w-20' : 'w-72'} flex-shrink-0 bg-black/40 backdrop-blur-md border-r border-white/10 flex-col transition-all duration-300 z-50`}>
         {/* Logo */}
         <div className="p-6 flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center flex-shrink-0">
@@ -109,13 +109,13 @@ export default function Layout({ children, onLogout }) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto bg-black/20 backdrop-blur-sm">
         {/* Top Bar */}
-        <header className="sticky top-0 z-40 bg-dark-500/80 backdrop-blur-xl border-b border-white/5 px-8 py-4 flex items-center justify-between">
+        <header className="sticky top-0 z-40 bg-black/40 backdrop-blur-xl border-b border-white/10 px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button 
               onClick={() => setCollapsed(!collapsed)}
-              className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
+              className="hidden md:flex p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
             >
               <ChevronRight className={`w-4 h-4 transition-transform ${collapsed ? '' : 'rotate-180'}`} />
             </button>
@@ -125,7 +125,7 @@ export default function Layout({ children, onLogout }) {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="px-3 py-1.5 rounded-full bg-primary-500/10 border border-primary-500/20">
+            <div className="hidden sm:flex px-3 py-1.5 rounded-full bg-primary-500/10 border border-primary-500/20">
               <span className="text-xs font-medium text-primary-400">
                 <Zap className="w-3 h-3 inline mr-1" />
                 Random Forest v2.4
@@ -141,10 +141,28 @@ export default function Layout({ children, onLogout }) {
         </header>
 
         {/* Page Content */}
-        <div className="p-8 bg-grid min-h-[calc(100vh-73px)]">
+        <div className="p-4 md:p-8 bg-grid min-h-[calc(100vh-73px)] pb-24 md:pb-8">
           {children}
         </div>
       </main>
+
+      {/* Mobile Bottom Nav */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/10 flex items-center justify-around p-2 z-50 safe-area-pb">
+        {navItems.map(({ path, label, icon: Icon }) => (
+          <NavLink
+            key={path}
+            to={path}
+            className={({ isActive }) =>
+              `flex flex-col items-center gap-1 p-2 min-w-[64px] rounded-xl transition-all duration-300 ${
+                isActive ? 'text-primary-400 scale-110' : 'text-gray-400 hover:text-white hover:scale-105'
+              }`
+            }
+          >
+            <Icon className="w-5 h-5" />
+            <span className="text-[10px] font-medium tracking-wide">{label.split(' ')[0]}</span>
+          </NavLink>
+        ))}
+      </nav>
     </div>
   )
 }

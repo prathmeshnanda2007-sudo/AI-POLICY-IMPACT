@@ -7,13 +7,18 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, 
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from sqlalchemy.exc import IntegrityError
 
-# Read the connection URL from environment or default to local SQLite
-# To switch to PostgreSQL, simply set DATABASE_URL=postgresql://user:password@localhost/policy_simulator
-DB_URL = os.environ.get("DATABASE_URL", f"sqlite:///{os.path.join(os.path.dirname(__file__), '..', 'data', 'policy_simulator.db')}")
+from dotenv import load_dotenv
+
+# Ensure .env variables are loaded
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
+
+# Read the connection URL from environment
+DB_URL = os.environ.get("DATABASE_URL")
+if not DB_URL:
+    raise ValueError("DATABASE_URL environment variable is not set. Please provide a valid PostgreSQL/NeonDB connection string.")
 
 # Create SQLAlchemy engine
-# connect_args={'check_same_thread': False} is only needed for SQLite
-connect_args = {'check_same_thread': False} if DB_URL.startswith("sqlite") else {}
+connect_args = {}
 engine = create_engine(DB_URL, connect_args=connect_args)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

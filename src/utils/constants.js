@@ -1,14 +1,14 @@
 export const POLICY_DEFAULTS = {
-  tax_rate: 25,
-  fuel_price: 3.5,
-  subsidy: 15,
-  public_spending: 30,
-  interest_rate: 5,
-  environmental_regulation: 50,
+  Tax_Rate: 15.0,
+  Fuel_Price: 4.5,
+  Subsidy_Level: 10.0,
+  Public_Spending: 30.0,
+  Interest_Rate: 5.0,
+  Environmental_Regulation: 50.0,
 }
 
 export const POLICY_CONFIG = {
-  tax_rate: {
+  Tax_Rate: {
     label: 'Tax Rate',
     unit: '%',
     min: 0,
@@ -18,27 +18,27 @@ export const POLICY_CONFIG = {
     icon: 'Receipt',
     color: '#06b6d4',
   },
-  fuel_price: {
+  Fuel_Price: {
     label: 'Fuel Price',
     unit: '$/gal',
     min: 1,
     max: 10,
     step: 0.1,
     description: 'Average gasoline price per gallon',
-    icon: 'Fuel',
+    icon: 'Zap',
     color: '#f59e0b',
   },
-  subsidy: {
+  Subsidy_Level: {
     label: 'Subsidy Level',
     unit: '%',
     min: 0,
     max: 50,
-    step: 0.5,
+    step: 1,
     description: 'Government subsidy as % of GDP',
-    icon: 'HandCoins',
+    icon: 'TrendingUp',
     color: '#10b981',
   },
-  public_spending: {
+  Public_Spending: {
     label: 'Public Spending',
     unit: '% GDP',
     min: 10,
@@ -48,17 +48,17 @@ export const POLICY_CONFIG = {
     icon: 'Building',
     color: '#8b5cf6',
   },
-  interest_rate: {
+  Interest_Rate: {
     label: 'Interest Rate',
     unit: '%',
     min: 0,
     max: 20,
     step: 0.25,
     description: 'Central bank base interest rate',
-    icon: 'TrendingUp',
+    icon: 'Landmark',
     color: '#ef4444',
   },
-  environmental_regulation: {
+  Environmental_Regulation: {
     label: 'Environmental Regulation',
     unit: '/100',
     min: 0,
@@ -81,7 +81,7 @@ export const OUTPUT_CONFIG = {
   inflation: {
     label: 'Inflation',
     unit: '%',
-    icon: 'ArrowUpRight',
+    icon: 'TrendingDown',
     color: '#ef4444',
     goodDirection: 'down',
   },
@@ -102,7 +102,7 @@ export const OUTPUT_CONFIG = {
   public_satisfaction: {
     label: 'Public Satisfaction',
     unit: '%',
-    icon: 'Heart',
+    icon: 'Smile',
     color: '#f59e0b',
     goodDirection: 'up',
   },
@@ -110,6 +110,11 @@ export const OUTPUT_CONFIG = {
 
 export function formatValue(value, unit) {
   if (typeof value !== 'number') return '—'
+  // CO2 is very large, format with commas or K/M
+  if (value > 9999) {
+    if (value >= 1000000) return `${(value / 1000000).toFixed(2)}M${unit}`
+    return `${(value / 1000).toFixed(1)}k${unit}`
+  }
   const formatted = Math.abs(value) >= 100
     ? value.toFixed(1) : value.toFixed(2)
   return `${formatted}${unit}`
@@ -125,16 +130,14 @@ export function getChangeColor(value, goodDirection = 'up') {
 
 export function getRiskLevel(results) {
   if (!results) return { level: 'unknown', color: 'gray' }
-  const { gdp_growth, inflation, employment_rate, environment_score } = results
+  const { gdp_growth, inflation } = results
   let risk = 0
   if (gdp_growth < 0) risk += 2
   if (gdp_growth < -2) risk += 1
-  if (inflation > 8) risk += 2
-  if (inflation > 12) risk += 1
-  if (employment_rate < 90) risk += 2
-  if (environment_score < 40) risk += 1
+  if (inflation > 8) risk += 1
+  if (inflation > 15) risk += 2
   
-  if (risk >= 5) return { level: 'HIGH RISK', color: 'red' }
-  if (risk >= 3) return { level: 'MODERATE', color: 'yellow' }
+  if (risk >= 3) return { level: 'HIGH RISK', color: 'red' }
+  if (risk >= 2) return { level: 'MODERATE', color: 'yellow' }
   return { level: 'STABLE', color: 'green' }
 }

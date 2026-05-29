@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { TrendingUp, TrendingDown, Activity, AlertTriangle, BarChart3, Clock } from 'lucide-react'
-import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Brush } from 'recharts'
+import { TrendingUp, AlertTriangle, BarChart3, Clock } from 'lucide-react'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Brush } from 'recharts'
 import { getHistory, getModelInfo } from '../services/api'
 import { Skeleton } from '../components/ui/skeleton'
 import {
@@ -48,8 +48,7 @@ export default function Dashboard() {
   const [sorting, setSorting] = useState([])
   const [stats, setStats] = useState({
     totalSimulations: 0,
-    avgInflation: 0,
-    avgEmissions: 0,
+    avgGDP: 0,
     highRisk: 0,
   })
 
@@ -68,10 +67,9 @@ export default function Dashboard() {
 
       if (histData.length > 0) {
         const totalSimulations = histData.length
-        const avgInflation = histData.reduce((s, h) => s + (h.results?.inflation || 0), 0) / totalSimulations
-        const avgEmissions = histData.reduce((s, h) => s + (100 - (h.results?.environment_score || 50)), 0) / totalSimulations
-        const highRisk = histData.filter(h => (h.results?.gdp_growth || 0) < 0 || (h.results?.inflation || 0) > 8).length
-        setStats({ totalSimulations, avgInflation, avgEmissions, highRisk })
+        const avgGDP = histData.reduce((s, h) => s + (h.results?.gdp_growth || 0), 0) / totalSimulations
+        const highRisk = histData.filter(h => (h.results?.gdp_growth || 0) < 0).length
+        setStats({ totalSimulations, avgGDP, highRisk })
       }
     } catch (err) {
       console.error('Failed to load dashboard data:', err)
@@ -84,9 +82,6 @@ export default function Dashboard() {
     { accessorKey: 'id', header: 'ID' },
     { accessorKey: 'timestamp', header: 'Date', cell: info => new Date(info.getValue()).toLocaleDateString() },
     { accessorFn: row => row.results?.gdp_growth, id: 'gdp', header: 'GDP Growth', cell: info => `${info.getValue().toFixed(2)}%` },
-    { accessorFn: row => row.results?.inflation, id: 'inflation', header: 'Inflation', cell: info => `${info.getValue().toFixed(2)}%` },
-    { accessorFn: row => row.results?.employment_rate, id: 'employment', header: 'Employment', cell: info => `${info.getValue().toFixed(1)}%` },
-    { accessorFn: row => row.results?.environment_score, id: 'environment', header: 'Env Score', cell: info => info.getValue().toFixed(1) },
   ], [])
 
   const table = useReactTable({
@@ -102,21 +97,14 @@ export default function Dashboard() {
 
   const chartData = React.useMemo(() => {
     if (history.length === 0) {
-      // Generate sample data for display
       return Array.from({ length: 8 }, (_, i) => ({
         name: `Q${(i % 4) + 1} ${2024 + Math.floor(i / 4)}`,
         gdp: 2.1 + Math.sin(i * 0.8) * 1.2,
-        inflation: 3.5 + Math.cos(i * 0.6) * 1.5,
-        employment: 93 + Math.sin(i * 0.4) * 2,
-        environment: 55 + i * 2.5,
       }))
     }
     return history.slice(0, 10).reverse().map((h, i) => ({
       name: `Sim ${i + 1}`,
       gdp: h.results?.gdp_growth || 0,
-      inflation: h.results?.inflation || 0,
-      employment: h.results?.employment_rate || 0,
-      environment: h.results?.environment_score || 0,
     }))
   }, [history])
 
@@ -130,23 +118,15 @@ export default function Dashboard() {
       color: '#06b6d4',
     },
     {
-      label: 'Avg. Inflation Change',
-      value: `${stats.avgInflation.toFixed(1)}%`,
+      label: 'Avg. GDP Projection',
+      value: `${stats.avgGDP.toFixed(2)}%`,
       icon: TrendingUp,
-      change: stats.avgInflation > 3 ? 'increase' : 'decrease',
-      positive: stats.avgInflation <= 3,
-      color: '#ef4444',
-    },
-    {
-      label: 'Avg. Emissions Change',
-      value: `-${stats.avgEmissions.toFixed(1)}%`,
-      icon: TrendingDown,
-      change: 'decrease',
-      positive: true,
+      change: stats.avgGDP > 2.5 ? 'above target' : 'below target',
+      positive: stats.avgGDP >= 2.5,
       color: '#22c55e',
     },
     {
-      label: 'High-Risk Policies',
+      label: 'Recession Risks',
       value: stats.highRisk || 0,
       icon: AlertTriangle,
       change: stats.highRisk > 0 ? `${stats.highRisk} detected` : 'none',
@@ -163,9 +143,9 @@ export default function Dashboard() {
       </motion.div>
 
       {/* Stat Cards */}
-      <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {loading ? (
-          Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-32 rounded-2xl bg-white/5" />)
+          Array(3).fill(0).map((_, i) => <Skeleton key={i} className="h-32 rounded-2xl bg-white/5" />)
         ) : (
           statCards.map((card) => (
             <div key={card.label} className="glass-card-hover p-6">
@@ -187,8 +167,8 @@ export default function Dashboard() {
       </motion.div>
 
       {/* Charts Row */}
-      <motion.div variants={item} className="grid lg:grid-cols-2 gap-6">
-        {/* GDP & Inflation Chart */}
+      <motion.div variants={item} className="grid lg:grid-cols-1 gap-6">
+        {/* GDP Chart */}
         {loading ? <Skeleton className="h-[400px] rounded-2xl bg-white/5" /> : (
         <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-6">
@@ -206,37 +186,8 @@ export default function Dashboard() {
               <Tooltip content={<CustomTooltip />} />
               <Legend />
               <Line type="monotone" dataKey="gdp" stroke="#06b6d4" strokeWidth={3} dot={{ fill: '#06b6d4', r: 4 }} name="GDP Growth %" />
-              <Line type="monotone" dataKey="inflation" stroke="#ef4444" strokeWidth={3} dot={{ fill: '#ef4444', r: 4 }} name="Inflation %" />
               <Brush dataKey="name" height={30} stroke="#64748b" fill="rgba(255,255,255,0.05)" />
             </LineChart>
-          </ResponsiveContainer>
-        </div>
-        )}
-
-        {/* Environment Chart */}
-        {loading ? <Skeleton className="h-[400px] rounded-2xl bg-white/5" /> : (
-        <div className="glass-card p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-semibold text-gray-200">Environmental Impact Trend</h3>
-            <div className="flex items-center gap-2 text-xs text-gray-400">
-              <Activity className="w-3.5 h-3.5" />
-              CO₂ per capita
-            </div>
-          </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey="name" stroke="#64748b" tick={{ fontSize: 11 }} />
-              <YAxis stroke="#64748b" tick={{ fontSize: 11 }} />
-              <Tooltip content={<CustomTooltip />} />
-              <defs>
-                <linearGradient id="envGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <Area type="monotone" dataKey="environment" stroke="#22c55e" strokeWidth={3} fill="url(#envGrad)" dot={{ fill: '#22c55e', r: 4 }} name="Environment Score" />
-            </AreaChart>
           </ResponsiveContainer>
         </div>
         )}

@@ -1,10 +1,34 @@
 import React from 'react'
-import ReactDOM from 'react-dom/client'
+import { hydrateRoot, createRoot } from 'react-dom/client'
+import { HelmetProvider } from 'react-helmet-async'
 import App from './App'
 import './index.css'
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-)
+import { GoogleOAuthProvider } from '@react-oauth/google'
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
+
+const rootElement = document.getElementById('root')
+
+if (rootElement.hasChildNodes()) {
+  hydrateRoot(
+    rootElement,
+    <React.StrictMode>
+      <HelmetProvider>
+        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+          <App />
+        </GoogleOAuthProvider>
+      </HelmetProvider>
+    </React.StrictMode>
+  )
+} else {
+  createRoot(rootElement).render(
+    <React.StrictMode>
+      <HelmetProvider>
+        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+          <App />
+        </GoogleOAuthProvider>
+      </HelmetProvider>
+    </React.StrictMode>
+  )
+}

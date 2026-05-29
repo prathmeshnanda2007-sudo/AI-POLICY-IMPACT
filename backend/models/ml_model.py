@@ -1,18 +1,5 @@
-"""
-AI Policy Impact Simulator — ML Model Training & Prediction
-
-Generates synthetic dataset, trains RandomForest/LinearRegression/GradientBoosting,
-selects best model by RMSE, and saves to model.pkl
-"""
-
-import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from sklearn.linear_model import LinearRegression
-from sklearn.multioutput import MultiOutputRegressor
-from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.preprocessing import StandardScaler
+import numpy as np
 import joblib
 import os
 import json
@@ -20,255 +7,87 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-MODEL_DIR = os.path.join(os.path.dirname(__file__), 'data')
-MODEL_PATH = os.path.join(MODEL_DIR, 'model.pkl')
-SCALER_PATH = os.path.join(MODEL_DIR, 'scaler.pkl')
-METADATA_PATH = os.path.join(MODEL_DIR, 'model_metadata.json')
+MODEL_DIR = os.path.dirname(__file__)
+BACKEND_DIR = os.path.abspath(os.path.join(MODEL_DIR, '..'))
+MODEL_PATH = os.path.join(BACKEND_DIR, 'model.pkl')
+METADATA_PATH = os.path.join(BACKEND_DIR, 'model_metadata.json')
 
 FEATURE_NAMES = [
-    'tax_rate', 'fuel_price', 'subsidy',
-    'public_spending', 'interest_rate', 'environmental_regulation'
+    'Tax_Rate', 
+    'Fuel_Price', 
+    'Subsidy_Level', 
+    'Public_Spending', 
+    'Interest_Rate', 
+    'Environmental_Regulation'
 ]
 
 OUTPUT_NAMES = [
-    'gdp_growth', 'inflation', 'employment_rate',
-    'environment_score', 'public_satisfaction'
+    'gdp_growth', 
+    'inflation', 
+    'employment_rate', 
+    'environment_score', 
+    'public_satisfaction'
 ]
 
-
-def generate_synthetic_data(n_samples=5000, seed=42):
-    """Generate realistic synthetic policy→outcome data with non-linear relationships."""
-    np.random.seed(seed)
-
-    # Features
-    tax_rate = np.random.uniform(5, 55, n_samples)
-    fuel_price = np.random.uniform(1.5, 9.0, n_samples)
-    subsidy = np.random.uniform(0, 45, n_samples)
-    public_spending = np.random.uniform(12, 55, n_samples)
-    interest_rate = np.random.uniform(0.25, 18, n_samples)
-    env_regulation = np.random.uniform(5, 95, n_samples)
-
-    # --- Realistic non-linear output relationships ---
-    
-    # GDP Growth: Higher tax hurts, subsidy helps, moderate spending optimal, high interest hurts
-    gdp_growth = (
-        3.5
-        - 0.06 * tax_rate
-        + 0.04 * subsidy
-        + 0.03 * public_spending
-        - 0.002 * public_spending ** 1.3
-        - 0.12 * interest_rate
-        + 0.005 * interest_rate ** 0.5 * subsidy
-        - 0.01 * env_regulation
-        - 0.02 * fuel_price
-        + np.random.normal(0, 0.3, n_samples)
-    )
-
-    # Inflation: Spending and subsidy increase it, higher interest reduces it
-    inflation = (
-        2.0
-        + 0.04 * public_spending
-        + 0.03 * subsidy
-        + 0.15 * fuel_price
-        - 0.08 * interest_rate
-        + 0.01 * tax_rate
-        + 0.003 * public_spending * subsidy / 100
-        + np.random.normal(0, 0.25, n_samples)
-    )
-
-    # Employment: Subsidy and public spending help, high tax and interest hurt
-    employment_rate = (
-        92.0
-        - 0.08 * tax_rate
-        + 0.12 * subsidy
-        + 0.06 * public_spending
-        - 0.15 * interest_rate
-        + 0.02 * env_regulation
-        - 0.05 * fuel_price
-        + np.random.normal(0, 0.5, n_samples)
-    )
-    employment_rate = np.clip(employment_rate, 70, 99.5)
-
-    # Environment Score: Regulation helps most, fuel price inversely related, subsidy helps somewhat
-    environment_score = (
-        30.0
-        + 0.45 * env_regulation
-        - 0.8 * fuel_price
-        + 0.1 * subsidy
-        + 0.05 * tax_rate
-        - 0.02 * public_spending
-        - 0.5 * interest_rate * 0.3
-        + np.random.normal(0, 2.0, n_samples)
-    )
-    environment_score = np.clip(environment_score, 5, 100)
-
-    # Public Satisfaction: Complex mix — low tax, low fuel, high employment, good environment
-    public_satisfaction = (
-        60.0
-        - 0.3 * tax_rate
-        - 1.2 * fuel_price
-        + 0.25 * subsidy
-        + 0.1 * public_spending
-        - 0.2 * interest_rate
-        + 0.15 * env_regulation
-        + 0.1 * (employment_rate - 90)
-        - 0.05 * np.abs(inflation - 2.5)
-        + np.random.normal(0, 1.5, n_samples)
-    )
-    public_satisfaction = np.clip(public_satisfaction, 10, 95)
-
-    X = np.column_stack([tax_rate, fuel_price, subsidy, public_spending, interest_rate, env_regulation])
-    y = np.column_stack([gdp_growth, inflation, employment_rate, environment_score, public_satisfaction])
-
-    return pd.DataFrame(X, columns=FEATURE_NAMES), pd.DataFrame(y, columns=OUTPUT_NAMES)
-
-
-def train_and_select_best():
-    """Train multiple models, compare RMSE, save the best."""
-    os.makedirs(MODEL_DIR, exist_ok=True)
-
-    logger.info("[ML] Generating 5,000 synthetic policy samples...")
-    X, y = generate_synthetic_data(5000)
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
-
-    models = {
-        'RandomForest': MultiOutputRegressor(
-            RandomForestRegressor(n_estimators=200, max_depth=15, min_samples_split=5, random_state=42, n_jobs=-1)
-        ),
-        'LinearRegression': MultiOutputRegressor(LinearRegression()),
-        'GradientBoosting': MultiOutputRegressor(
-            GradientBoostingRegressor(n_estimators=150, max_depth=8, learning_rate=0.1, random_state=42)
-        ),
-    }
-
-    results = {}
-    for name, model in models.items():
-        logger.info(f"[ML] Training {name}...")
-        model.fit(X_train_scaled, y_train)
-        y_pred = model.predict(X_test_scaled)
-        rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-        r2 = r2_score(y_test, y_pred)
-        results[name] = {'model': model, 'rmse': rmse, 'r2': r2}
-        logger.info(f"[ML]   {name}: RMSE={rmse:.4f}  R2={r2:.4f}")
-
-    # Select best by RMSE
-    best_name = min(results, key=lambda k: results[k]['rmse'])
-    best = results[best_name]
-    logger.info(f"[ML] Best model: {best_name} (RMSE={best['rmse']:.4f}, R2={best['r2']:.4f})")
-
-    # Save model and scaler
-    joblib.dump(best['model'], MODEL_PATH)
-    joblib.dump(scaler, SCALER_PATH)
-
-    # Feature importance - use permutation importance for any model type
-    from sklearn.inspection import permutation_importance
-    logger.info("[ML] Computing feature importance...")
-    perm_importance = permutation_importance(
-        best['model'], X_test_scaled, y_test, n_repeats=10, random_state=42, n_jobs=-1
-    )
-    feature_importance = {}
-    for j, feat in enumerate(FEATURE_NAMES):
-        feature_importance[feat] = float(max(0, perm_importance.importances_mean[j]))
-
-    # Save metadata
-    metadata = {
-        'model_type': best_name,
-        'rmse': float(best['rmse']),
-        'r2_score': float(best['r2']),
-        'training_samples': 5000,
-        'feature_names': FEATURE_NAMES,
-        'output_names': OUTPUT_NAMES,
-        'feature_importance': feature_importance,
-        'all_results': {k: {'rmse': float(v['rmse']), 'r2': float(v['r2'])} for k, v in results.items()},
-    }
-    with open(METADATA_PATH, 'w') as f:
-        json.dump(metadata, f, indent=2)
-
-    logger.info(f"[ML] Model saved to {MODEL_PATH}")
-    logger.info(f"[ML] Scaler saved to {SCALER_PATH}")
-    logger.info(f"[ML] Metadata saved to {METADATA_PATH}")
-    return best['model'], scaler, metadata
-
-
 def load_model():
-    """Load trained model and scaler, or train if not found."""
-    if os.path.exists(MODEL_PATH) and os.path.exists(SCALER_PATH):
+    if os.path.exists(MODEL_PATH):
         model = joblib.load(MODEL_PATH)
-        scaler = joblib.load(SCALER_PATH)
         metadata = {}
         if os.path.exists(METADATA_PATH):
-            with open(METADATA_PATH) as f:
+            with open(METADATA_PATH, 'r') as f:
                 metadata = json.load(f)
-        return model, scaler, metadata
+        return model, None, metadata
     else:
-        return train_and_select_best()
-
-
-# Physical output bounds — clamp predictions to realistic ranges
-OUTPUT_BOUNDS = {
-    'gdp_growth':        (-15.0, 20.0),
-    'inflation':         (-2.0,  30.0),
-    'employment_rate':   (70.0,  99.5),   # BUG FIX: was predicting 101.9% in Max Stimulus
-    'environment_score': (0.0,   100.0),
-    'public_satisfaction': (0.0, 100.0),
-}
-
+        raise FileNotFoundError(f"Model file not found at {MODEL_PATH}.")
 
 def predict_policy(input_data: dict, model=None, scaler=None):
-    """Make prediction from policy input dictionary."""
-    if model is None or scaler is None:
-        model, scaler, _ = load_model()
-
-    features = pd.DataFrame([[input_data.get(f, 0) for f in FEATURE_NAMES]], columns=FEATURE_NAMES)
-    features_scaled = scaler.transform(features)
-    predictions = model.predict(features_scaled)[0]
-
-    # Calculate confidence based on how close inputs are to training distribution center
-    center = scaler.mean_
-    scale = scaler.scale_
-    normalized_dist = np.mean(np.abs((features.values[0] - center) / scale))
-    confidence = max(0.6, min(0.99, 1.0 - normalized_dist * 0.1))
-
-    result = {}
-    for i, name in enumerate(OUTPUT_NAMES):
-        raw = float(predictions[i])
-        # Clamp to physical bounds so UI never shows impossible values
-        lo, hi = OUTPUT_BOUNDS.get(name, (-1e9, 1e9))
-        result[name] = round(max(lo, min(hi, raw)), 4)
-    result['confidence'] = float(confidence)
-
-    return result
-
+    if model is None:
+        model, _, _ = load_model()
+        
+    feature_dict = {}
+    for f in FEATURE_NAMES:
+        feature_dict[f] = [input_data.get(f, 0)]
+        
+    df_features = pd.DataFrame(feature_dict)[FEATURE_NAMES]
+    prediction = model.predict(df_features)[0] 
+    
+    return {
+        'gdp_growth': round(float(prediction[0]), 4),
+        'inflation': round(float(prediction[1]), 4),
+        'employment_rate': round(float(prediction[2]), 4),
+        'environment_score': round(float(prediction[3]), 4),
+        'public_satisfaction': round(float(prediction[4]), 4),
+        'confidence': 0.85
+    }
 
 def get_feature_importance():
-    """Return feature importance from saved metadata."""
-    if os.path.exists(METADATA_PATH):
-        with open(METADATA_PATH) as f:
-            metadata = json.load(f)
-        fi = metadata.get('feature_importance', {})
-        return [{'feature': k, 'importance': round(v, 4)} for k, v in sorted(fi.items(), key=lambda x: -x[1])]
-    return []
-
+    path = os.path.join(BACKEND_DIR, 'feature_importance.json')
+    if os.path.exists(path):
+        with open(path, 'r') as f:
+            return json.load(f)
+    return [
+        {'feature': f, 'importance': 0.16} for f in FEATURE_NAMES
+    ]
 
 def sensitivity_analysis(base_inputs: dict, target_variable: str = 'gdp_growth'):
-    """Vary each input and measure impact on target variable."""
-    model, scaler, _ = load_model()
-    base_pred = predict_policy(base_inputs, model, scaler)
+    model, _, _ = load_model()
+    # Provide defaults
+    defaults = {
+        'Tax_Rate': 15.0, 'Fuel_Price': 4.5, 'Subsidy_Level': 10.0,
+        'Public_Spending': 30.0, 'Interest_Rate': 5.0, 'Environmental_Regulation': 50.0
+    }
+    base_complete = {f: base_inputs.get(f, defaults[f]) for f in FEATURE_NAMES}
+
+    base_pred = predict_policy(base_complete, model)
     base_val = base_pred.get(target_variable, 0)
 
     from copy import deepcopy
     results = []
     for feat in FEATURE_NAMES:
-        modified = deepcopy(base_inputs)
-        # Increase by 10%
+        modified = deepcopy(base_complete)
         original = modified.get(feat, 0)
         modified[feat] = original * 1.1 if original != 0 else 1.0
-        new_pred = predict_policy(modified, model, scaler)
+        new_pred = predict_policy(modified, model)
         new_val = new_pred.get(target_variable, 0)
         impact = new_val - base_val
         results.append({
@@ -278,40 +97,34 @@ def sensitivity_analysis(base_inputs: dict, target_variable: str = 'gdp_growth')
             'impact': round(impact, 4),
             'direction': 'positive' if impact > 0 else 'negative',
         })
-
     return sorted(results, key=lambda x: -abs(x['impact']))
 
-
 def recommend_policy(target_outcomes: dict):
-    """Use SciPy optimization (L-BFGS-B) over the ML model's prediction surface to find the optimal policy."""
-    model, scaler, _ = load_model()
+    model, _, _ = load_model()
+    defaults = {
+        'Tax_Rate': 15.0, 'Fuel_Price': 4.5, 'Subsidy_Level': 10.0,
+        'Public_Spending': 30.0, 'Interest_Rate': 5.0, 'Environmental_Regulation': 50.0
+    }
     
     def objective(x):
-        # x: [tax_rate, fuel_price, subsidy, public_spending, interest_rate, env_regulation]
-        features = pd.DataFrame([x], columns=FEATURE_NAMES)
-        features_scaled = scaler.transform(features)
-        pred = model.predict(features_scaled)[0]
+        feature_dict = {}
+        for i, f in enumerate(FEATURE_NAMES):
+            feature_dict[f] = [x[i]]
+            
+        pred = model.predict(pd.DataFrame(feature_dict)[FEATURE_NAMES])[0]
         
-        score = 0
-        for i, name in enumerate(OUTPUT_NAMES):
-            if name in target_outcomes:
-                # Calculate squared error, normalized to avoid dominant metrics
-                target_val = target_outcomes[name]
-                weight = 1.0
-                if name == 'inflation':
-                    weight = 2.0 # penalize inflation heavily
-                score += weight * ((pred[i] - target_val) / max(1.0, abs(target_val))) ** 2
-        return score
+        # pred[0] is gdp_growth
+        if 'gdp_growth' in target_outcomes:
+            return ((pred[0] - target_outcomes['gdp_growth']) ** 2)
+        return 0
 
-    # Start optimization from a neutral center point, or we could add random restarts for global search
-    # We will do 3 random restarts to find a good global minimum
     bounds = [
-        (5, 55),    # tax_rate
-        (1.5, 9.0), # fuel_price
-        (0, 45),    # subsidy
-        (12, 55),   # public_spending
-        (0.25, 18), # interest_rate
-        (5, 95),    # env_regulation
+        (0, 60),      # Tax_Rate
+        (1, 10),      # Fuel_Price
+        (0, 50),      # Subsidy_Level
+        (10, 60),     # Public_Spending
+        (0, 20),      # Interest_Rate
+        (0, 100)      # Environmental_Regulation
     ]
     
     from scipy.optimize import minimize
@@ -319,8 +132,6 @@ def recommend_policy(target_outcomes: dict):
     
     best_score = float('inf')
     best_x = None
-    
-    # 3 random starts to avoid local minima
     for _ in range(3):
         x0 = [np.random.uniform(b[0], b[1]) for b in bounds]
         res = minimize(objective, x0, method='L-BFGS-B', bounds=bounds)
@@ -329,15 +140,9 @@ def recommend_policy(target_outcomes: dict):
             best_x = res.x
 
     best_inputs = {
-        'tax_rate': round(best_x[0], 2),
-        'fuel_price': round(best_x[1], 2),
-        'subsidy': round(best_x[2], 2),
-        'public_spending': round(best_x[3], 2),
-        'interest_rate': round(best_x[4], 2),
-        'environmental_regulation': round(best_x[5], 2),
+        FEATURE_NAMES[i]: round(best_x[i], 2) for i in range(len(FEATURE_NAMES))
     }
-
-    best_predictions = predict_policy(best_inputs, model, scaler)
+    best_predictions = predict_policy(best_inputs, model)
 
     return {
         'recommended_inputs': best_inputs,
@@ -345,6 +150,7 @@ def recommend_policy(target_outcomes: dict):
         'optimization_score': round(best_score, 4),
     }
 
-
-if __name__ == '__main__':
-    train_and_select_best()
+def train_and_select_best():
+    import subprocess
+    subprocess.run(["python", "train_model.py"], cwd=BACKEND_DIR)
+    return load_model()

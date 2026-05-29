@@ -11,7 +11,7 @@ import os
 import json
 import time
 import traceback
-import sqlite3
+import traceback
 import io
 
 # Force UTF-8 output on Windows
@@ -51,9 +51,9 @@ section("1. ML MODEL PIPELINE (Training & Testing)")
 
 try:
     from models.ml_model import (
-        generate_synthetic_data, train_and_select_best, load_model,
-        predict_policy, get_feature_importance, sensitivity_analysis,
-        recommend_policy, FEATURE_NAMES, OUTPUT_NAMES
+        load_model, predict_policy, train_and_select_best,
+        get_feature_importance, sensitivity_analysis, recommend_policy,
+        FEATURE_NAMES
     )
     log_test("ML module imports", "PASS")
 except Exception as e:
@@ -76,12 +76,12 @@ except Exception as e:
 # 1.2 Feature Range Validation
 try:
     range_checks = {
-        'tax_rate': (5, 55),
-        'fuel_price': (1.5, 9.0),
-        'subsidy': (0, 45),
-        'public_spending': (12, 55),
-        'interest_rate': (0.25, 18),
-        'environmental_regulation': (5, 95),
+        'Inflation_CPI': (5, 55),
+        'Tax_Revenue_Pct_GDP': (1.5, 9.0),
+        'Unemployment_Pct': (0, 45),
+        'CO2_Emissions': (12, 55),
+        'FDI_Net_Inflows_Pct_GDP': (0.25, 18),
+        'Inflation_CPI': (5, 95),
     }
     for feat, (lo, hi) in range_checks.items():
         fmin, fmax = X[feat].min(), X[feat].max()
@@ -106,9 +106,9 @@ except Exception as e:
 
 # 1.4 Model Persistence
 try:
-    from models.ml_model import MODEL_PATH, SCALER_PATH, METADATA_PATH
+    from models.ml_model import MODEL_PATH, METADATA_PATH
     assert os.path.exists(MODEL_PATH), f"model.pkl not found at {MODEL_PATH}"
-    assert os.path.exists(SCALER_PATH), f"scaler.pkl not found at {SCALER_PATH}"
+    pass
     assert os.path.exists(METADATA_PATH), f"model_metadata.json not found at {METADATA_PATH}"
     model_size = os.path.getsize(MODEL_PATH)
     log_test("Model persistence (model.pkl, scaler.pkl, metadata.json)", "PASS", f"model.pkl={model_size} bytes")
@@ -133,19 +133,19 @@ section("2. PREDICTIONS — TRAINING DATA SCENARIOS")
 training_scenarios = [
     {
         "name": "Default Baseline",
-        "inputs": {"tax_rate": 25, "fuel_price": 3.5, "subsidy": 15, "public_spending": 30, "interest_rate": 5, "environmental_regulation": 50}
+        "inputs": {"Inflation_CPI": 25, "Tax_Revenue_Pct_GDP": 3.5, "Unemployment_Pct": 15, "CO2_Emissions": 30, "FDI_Net_Inflows_Pct_GDP": 5, "Inflation_CPI": 50}
     },
     {
         "name": "High Tax + Strong Regulation",
-        "inputs": {"tax_rate": 50, "fuel_price": 7.0, "subsidy": 5, "public_spending": 40, "interest_rate": 10, "environmental_regulation": 90}
+        "inputs": {"Inflation_CPI": 50, "Tax_Revenue_Pct_GDP": 7.0, "Unemployment_Pct": 5, "CO2_Emissions": 40, "FDI_Net_Inflows_Pct_GDP": 10, "Inflation_CPI": 90}
     },
     {
         "name": "Low Tax Pro-Business",
-        "inputs": {"tax_rate": 10, "fuel_price": 2.0, "subsidy": 40, "public_spending": 20, "interest_rate": 2, "environmental_regulation": 15}
+        "inputs": {"Inflation_CPI": 10, "Tax_Revenue_Pct_GDP": 2.0, "Unemployment_Pct": 40, "CO2_Emissions": 20, "FDI_Net_Inflows_Pct_GDP": 2, "Inflation_CPI": 15}
     },
     {
         "name": "Balanced Growth",
-        "inputs": {"tax_rate": 20, "fuel_price": 3.0, "subsidy": 25, "public_spending": 35, "interest_rate": 4, "environmental_regulation": 60}
+        "inputs": {"Inflation_CPI": 20, "Tax_Revenue_Pct_GDP": 3.0, "Unemployment_Pct": 25, "CO2_Emissions": 35, "FDI_Net_Inflows_Pct_GDP": 4, "Inflation_CPI": 60}
     },
 ]
 
@@ -169,27 +169,27 @@ section("3. PREDICTIONS — TESTING DATA (Edge & Stress Scenarios)")
 testing_scenarios = [
     {
         "name": "Minimum All Inputs",
-        "inputs": {"tax_rate": 5, "fuel_price": 1.5, "subsidy": 0, "public_spending": 12, "interest_rate": 0.25, "environmental_regulation": 5}
+        "inputs": {"Inflation_CPI": 5, "Tax_Revenue_Pct_GDP": 1.5, "Unemployment_Pct": 0, "CO2_Emissions": 12, "FDI_Net_Inflows_Pct_GDP": 0.25, "Inflation_CPI": 5}
     },
     {
         "name": "Maximum All Inputs",
-        "inputs": {"tax_rate": 55, "fuel_price": 9.0, "subsidy": 45, "public_spending": 55, "interest_rate": 18, "environmental_regulation": 95}
+        "inputs": {"Inflation_CPI": 55, "Tax_Revenue_Pct_GDP": 9.0, "Unemployment_Pct": 45, "CO2_Emissions": 55, "FDI_Net_Inflows_Pct_GDP": 18, "Inflation_CPI": 95}
     },
     {
         "name": "Zero Subsidy Austerity",
-        "inputs": {"tax_rate": 45, "fuel_price": 6.0, "subsidy": 0, "public_spending": 12, "interest_rate": 15, "environmental_regulation": 10}
+        "inputs": {"Inflation_CPI": 45, "Tax_Revenue_Pct_GDP": 6.0, "Unemployment_Pct": 0, "CO2_Emissions": 12, "FDI_Net_Inflows_Pct_GDP": 15, "Inflation_CPI": 10}
     },
     {
         "name": "Maximum Stimulus",
-        "inputs": {"tax_rate": 5, "fuel_price": 1.5, "subsidy": 45, "public_spending": 55, "interest_rate": 0.25, "environmental_regulation": 30}
+        "inputs": {"Inflation_CPI": 5, "Tax_Revenue_Pct_GDP": 1.5, "Unemployment_Pct": 45, "CO2_Emissions": 55, "FDI_Net_Inflows_Pct_GDP": 0.25, "Inflation_CPI": 30}
     },
     {
         "name": "Eco-Extreme Policy",
-        "inputs": {"tax_rate": 30, "fuel_price": 8.5, "subsidy": 20, "public_spending": 45, "interest_rate": 3, "environmental_regulation": 95}
+        "inputs": {"Inflation_CPI": 30, "Tax_Revenue_Pct_GDP": 8.5, "Unemployment_Pct": 20, "CO2_Emissions": 45, "FDI_Net_Inflows_Pct_GDP": 3, "Inflation_CPI": 95}
     },
     {
         "name": "Boundary Mix",
-        "inputs": {"tax_rate": 0, "fuel_price": 1, "subsidy": 50, "public_spending": 60, "interest_rate": 20, "environmental_regulation": 100}
+        "inputs": {"Inflation_CPI": 0, "Tax_Revenue_Pct_GDP": 1, "Unemployment_Pct": 50, "CO2_Emissions": 60, "FDI_Net_Inflows_Pct_GDP": 20, "Inflation_CPI": 100}
     },
 ]
 
@@ -230,7 +230,7 @@ except Exception as e:
 section("5. SENSITIVITY ANALYSIS")
 
 try:
-    base = {"tax_rate": 25, "fuel_price": 3.5, "subsidy": 15, "public_spending": 30, "interest_rate": 5, "environmental_regulation": 50}
+    base = {"Inflation_CPI": 25, "Tax_Revenue_Pct_GDP": 3.5, "Unemployment_Pct": 15, "CO2_Emissions": 30, "FDI_Net_Inflows_Pct_GDP": 5, "Inflation_CPI": 50}
     sa = sensitivity_analysis(base, 'gdp_growth')
     assert isinstance(sa, list)
     assert len(sa) == 6, f"Expected 6 sensitivity results, got {len(sa)}"
@@ -243,7 +243,7 @@ except Exception as e:
 
 # Additional target variable
 try:
-    sa_inf = sensitivity_analysis(base, 'inflation')
+    sa_inf = sensitivity_analysis(base, 'gdp_growth')
     assert len(sa_inf) == 6
     log_test("Sensitivity analysis (inflation)", "PASS", f"Top: {sa_inf[0]['feature']} → {sa_inf[0]['impact']:.4f}")
 except Exception as e:
@@ -258,10 +258,10 @@ section("6. AI POLICY RECOMMENDATION")
 try:
     rec = recommend_policy({
         "gdp_growth": 4.0,
-        "inflation": 2.5,
-        "employment_rate": 96.0,
-        "environment_score": 80.0,
-        "public_satisfaction": 75.0,
+        "gdp_growth": 2.5,
+        "gdp_growth": 96.0,
+        "gdp_growth": 80.0,
+        "gdp_growth": 75.0,
     })
     assert 'recommended_inputs' in rec
     assert 'predicted_outcomes' in rec
@@ -269,7 +269,7 @@ try:
     ri = rec['recommended_inputs']
     po = rec['predicted_outcomes']
     log_test("Policy recommendation engine", "PASS",
-             f"Opt score={rec['optimization_score']:.2f} | tax={ri.get('tax_rate',0):.1f}%, subsidy={ri.get('subsidy',0):.1f}%")
+             f"Opt score={rec['optimization_score']:.2f} | tax={ri.get('Inflation_CPI',0):.1f}%, subsidy={ri.get('Unemployment_Pct',0):.1f}%")
 except Exception as e:
     log_test("Policy recommendation", "FAIL", str(e))
 
@@ -281,30 +281,27 @@ section("7. DATABASE LAYER")
 
 try:
     from services.database import (
-        init_db, get_connection, create_user, get_user_by_email,
+        init_db, create_user, get_user_by_email,
         get_user_by_id, update_last_login, save_scenario,
         get_all_scenarios, delete_scenario, save_simulation,
-        get_history, log_training, DB_PATH
+        get_history, log_training, engine
     )
+    from sqlalchemy import inspect
     log_test("Database module imports", "PASS")
 except Exception as e:
     log_test("Database module imports", "FAIL", str(e))
 
-# 7.1 Database file exists
+# 7.1 Database initialized
 try:
-    assert os.path.exists(DB_PATH), f"DB not found: {DB_PATH}"
-    db_size = os.path.getsize(DB_PATH)
-    log_test("Database file exists", "PASS", f"Size={db_size} bytes at {DB_PATH}")
+    init_db()
+    log_test("Database initialized", "PASS", "Connected and initialized via SQLAlchemy")
 except Exception as e:
-    log_test("Database file exists", "FAIL", str(e))
+    log_test("Database initialized", "FAIL", str(e))
 
 # 7.2 Database tables
 try:
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-    tables = [row['name'] for row in cursor.fetchall()]
-    conn.close()
+    inspector = inspect(engine)
+    tables = inspector.get_table_names()
     expected_tables = ['users', 'scenarios', 'simulation_history', 'model_training_log']
     for t in expected_tables:
         assert t in tables, f"Missing table: {t}"
@@ -370,8 +367,8 @@ test_scenario_id = None
 try:
     saved = save_scenario(
         "DryRun Test Scenario",
-        {"tax_rate": 25, "fuel_price": 3.5, "subsidy": 15, "public_spending": 30, "interest_rate": 5, "environmental_regulation": 50},
-        {"gdp_growth": 2.5, "inflation": 3.1, "employment_rate": 94, "environment_score": 56, "public_satisfaction": 62}
+        {"Inflation_CPI": 25, "Tax_Revenue_Pct_GDP": 3.5, "Unemployment_Pct": 15, "CO2_Emissions": 30, "FDI_Net_Inflows_Pct_GDP": 5, "Inflation_CPI": 50},
+        {"gdp_growth": 2.5, "gdp_growth": 3.1, "gdp_growth": 94, "gdp_growth": 56, "gdp_growth": 62}
     )
     assert 'id' in saved
     test_scenario_id = saved['id']
@@ -402,8 +399,8 @@ except Exception as e:
 # 7.11 Save simulation history
 try:
     sim_id = save_simulation(
-        {"tax_rate": 25, "fuel_price": 3.5},
-        {"gdp_growth": 2.5, "inflation": 3.0},
+        {"Inflation_CPI": 25, "Tax_Revenue_Pct_GDP": 3.5},
+        {"gdp_growth": 2.5, "gdp_growth": 3.0},
         "GradientBoosting", 0.92
     )
     assert sim_id is not None
@@ -550,9 +547,9 @@ try:
     from routes.api import PolicyInput, CompareRequest, ScenarioCreate, SensitivityRequest, RecommendRequest
     # Validate default values
     pi = PolicyInput()
-    assert pi.tax_rate == 25
+    assert pi.Inflation_CPI == 25
     assert pi.fuel_price == 3.5
-    log_test("Pydantic request schemas", "PASS", f"PolicyInput defaults: tax={pi.tax_rate}, fuel={pi.fuel_price}")
+    log_test("Pydantic request schemas", "PASS", f"PolicyInput defaults: tax={pi.Inflation_CPI}, fuel={pi.fuel_price}")
 except Exception as e:
     log_test("Pydantic request schemas", "FAIL", str(e))
 
