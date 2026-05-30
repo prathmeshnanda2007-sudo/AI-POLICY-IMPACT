@@ -6,7 +6,7 @@ import './index.css'
 
 import { GoogleOAuthProvider } from '@react-oauth/google'
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '749867159327-iv5fddu9ac4n1st4q2jo8amqh9j3gua1.apps.googleusercontent.com'
 
 const rootElement = document.getElementById('root')
 
